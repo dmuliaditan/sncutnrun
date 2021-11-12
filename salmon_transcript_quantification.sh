@@ -20,13 +20,14 @@ gencode_version=v38
 salmon index --gencode -t "$reference_dir"'/gencode.'"$gencode_version"'.transcripts.fa.gz' -i "$reference_dir"'/gencode.'"$gencode_version"'_salmon_1.5.2'
 salmon_index="$reference_dir"'/gencode.'"$gencode_version"'_salmon_1.5.2'
 
-for i in HN120Pri_a HN120Pri_b HN120Pri_c HN120Met_a HN120Met_b HN120Met_c HN120PCR_a HN120PCR_b HN120PCR_c HN137Pri_a HN137Pri_b HN137Pri_c HN137Met_a HN137Met_b HN137Met_c HN137PCR_a HN137PCR_b HN137PCR_c 
+for i in HN120Pri_a HN120Pri_b HN120Pri_c HN120Met_a HN120Met_b HN120Met_c HN120PCR_a HN120PCR_b HN120PCR_c HN137Pri_a HN137Met_a HN137Met_b HN137Met_c HN137PCR_a HN137PCR_b HN137PCR_c 
 do
 
 #Quantify with salmon
-R1=
-R2=
-outdir=/mnt/raid5/cutnrun/rnaseq/salmon_output
+R1='/mnt/raid5/cutnrun/rnaseq/fastqdir/'"$i"'_1.fq.gz'
+R2='/mnt/raid5/cutnrun/rnaseq/fastqdir/'"$i"'_2.fq.gz'
+mkdir '/mnt/raid5/cutnrun/rnaseq/salmon_output/'"$i"
+outdir=/'/mnt/raid5/cutnrun/rnaseq/salmon_output/'"$i"
 
 salmon quant -i "$salmon_index" -l A -p 8 \
          --gcBias --seqBias --numGibbsSamples 20 -o "$outdir" \
