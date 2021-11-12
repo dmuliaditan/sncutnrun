@@ -1,4 +1,4 @@
-# sncutnrun
+# Single nucleus CUT&RUN to assess epigenetic heterogeneity in head and neck cancer progression
 Repository for all code used in the snCUT&amp;RUN project
 
 Daniel Muliaditan, 08 November 2021
