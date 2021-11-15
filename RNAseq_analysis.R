@@ -2,8 +2,8 @@
 #Tutorial RNA-seq workflow: gene-level exploratory analysis and differential expression, Michael I. Love, Simon Anders, Vladislav Kim and Wolfgang Huber, 16 October, 2019
 #https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
 
-setwd(/mnt/raid5/cutnrun/rnaseq)
-dir <- /mnt/raid5/cutnrun/rnaseq/salmon_output
+setwd("/mnt/raid5/cutnrun/rnaseq")
+dir <- "/mnt/raid5/cutnrun/rnaseq/salmon_output"
 
 list.files(dir)
 
@@ -13,9 +13,9 @@ csvfile <- file.path(dir, "sample_meta.csv")
 coldata <- read.csv(csvfile, stringsAsFactors=FALSE, header=T)
 coldata
 
-coldata <- coldata[c(1:2,4),]
+coldata <- coldata[,c(1:2,4)]
 coldata$names <- coldata$Library
-coldata$files <- file.path(dir, "quants", coldata$names, "quant.sf.gz")
+coldata$files <- file.path(dir, coldata$names, "quant.sf")
 file.exists(coldata$files)
 
 library("tximeta")
@@ -31,6 +31,7 @@ head(rownames(gse))
 data(gse)
 gse
 
+library(SummarizedExperiment)
 assayNames(gse)
 head(assay(gse), 3)
 colSums(assay(gse))
