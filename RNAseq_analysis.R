@@ -268,10 +268,24 @@ rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
 length(rnaseq_gene_index)
 res_subset <- resOrdered[rnaseq_gene_index,]
 summary(res_subset$log2FoldChange)
+E4_E3 <- data.frame(transition="E4_E3", log2FoldChange=res_subset$log2FoldChange)
+
+#Unmodified gaining H3K27ac
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E3_E4_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
 E3_E4 <- data.frame(transition="E3_E4", log2FoldChange=res_subset$log2FoldChange)
 
 #Combine data
-trans_change <- rbind(E2_E3, E3_E4)
+trans_change <- rbind(E2_E3, E4_E3, E3_E4)
 ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
        geom_boxplot()
 
