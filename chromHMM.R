@@ -50,11 +50,41 @@ segment_combined <- data.frame(chr=bed1$V1,
 
 setwd("E:/snCUT_RUN/results/ChromHMM")
 
-#K4me3 gaining K27ac during HN137Pri-HN137Met transition
+#H3K4me3 gaining H3K27ac during HN137Pri-HN137Met transition
 E1_E2 <- which(segment_combined$state == "E1-E2")
 subseg <- segment_combined[E1_E2,]
 write.table(x = subseg,
             file = "HN137Pri_HN137Met_E1_E2_regions.bed", 
+            quote = F,
+            col.names = F,
+            row.names = F,
+            sep = "\t")
+
+#H3K4me3 losing H3K4me3 but gaining H3K27ac during HN137Pri-HN137Met transition
+E1_E3 <- which(segment_combined$state == "E1-E3")
+subseg <- segment_combined[E1_E3,]
+write.table(x = subseg,
+            file = "HN137Pri_HN137Met_E1_E3_regions.bed", 
+            quote = F,
+            col.names = F,
+            row.names = F,
+            sep = "\t")
+
+#H3K4me3 becoming unmodified during HN137Pri-HN137Met transition
+E1_E4 <- which(segment_combined$state == "E1-E4")
+subseg <- segment_combined[E1_E4,]
+write.table(x = subseg,
+            file = "HN137Pri_HN137Met_E1_E4_regions.bed", 
+            quote = F,
+            col.names = F,
+            row.names = F,
+            sep = "\t")
+
+#H3K4me3 becoming heterochromatin during HN137Pri-HN137Met transition
+E1_E5 <- which(segment_combined$state == "E1-E5")
+subseg <- segment_combined[E1_E5,]
+write.table(x = subseg,
+            file = "HN137Pri_HN137Met_E1_E5_regions.bed", 
             quote = F,
             col.names = F,
             row.names = F,
