@@ -20,6 +20,8 @@ coldata$Patient <- factor(coldata$Patient)
 coldata$names <- coldata$Library
 coldata$files <- file.path(dir, coldata$names, "quant.sf")
 
+coldata <- coldata[coldata$Patient == "HN137",]
+
 file.exists(coldata$files)
 
 library("tximeta")
@@ -54,13 +56,13 @@ round( colSums(assay(gse)) / 1e6, 1 )
 
 #Construct DESeq2 object
 library("DESeq2")
-dds <- DESeqDataSet(gse, design = ~  Patient + Type)
+dds <- DESeqDataSet(gse, design = ~ Sample)
 
 #Exploratory analysis and visualization
 nrow(dds)
 
-#Keep only features with at least 2 counts or more
-keep <- rowSums(counts(dds)) > 1
+#Keep only features with at least 10 counts or more in 3 samples
+keep <- rowSums(counts(dds) >= 10) >= 3
 dds <- dds[keep,]
 nrow(dds)
 
@@ -145,7 +147,15 @@ gpca.dat <- gpca$factors
 gpca.dat$Type <- dds$Type
 gpca.dat$Patient <- dds$Patient
 ggplot(gpca.dat, aes(x = dim1, y = dim2, color = Type, shape = Patient)) +
-  geom_point(size =3) + coord_fixed() + ggtitle("glmpca - Generalized PCA")
+  geom_point(size =3) + coord_fixed() + ggtitle("glmpca - Generalized PCA") +
+  xlab("Dim1") +
+  ylab("Dim2") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 24),
+        axis.title = element_text(size = 28),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 20),
+        title = element_text(size = 24))
 
 #Differential analysis
 #Running the differential expression pipeline
@@ -154,7 +164,8 @@ dds <- DESeq(dds)
 #Building the results table
 res <- results(dds)
 res
-res <- results(dds, contrast=c("Type","Primary", "Metastatic"))
+resultsNames(dds)
+res <- results(dds, contrast=c("Sample","HN137Met", "HN137Pri"))
 mcols(res, use.names = TRUE)
 summary(res)
 
@@ -168,7 +179,7 @@ table(resLFC1$padj < 0.1)
 
 #Other comparisons
 #Check between HN137Pri and HN137Met
-results(dds, contrast = c("Type", "Metastatic", "Primary"))
+#results(dds, contrast = c("Sample", "Metastatic", "Primary"))
 
 #Multiple testing
 sum(res$pvalue < 0.05, na.rm=TRUE)
@@ -219,5 +230,49 @@ res$entrez <- mapIds(org.Hs.eg.db,
                      column="ENTREZID",
                      keytype="ENSEMBL",
                      multiVals="first")
+#Check top differential genes
 resOrdered <- res[order(res$pvalue),]
 head(resOrdered)
+
+#Check top upregulated genes
+resOrdered <- res[order(res$log2FoldChange, decreasing = TRUE ),]
+resOrdered
+plotCounts(dds, gene = "ENSG00000137693.14" , intgroup=c("Sample"))
+
+#Check gene expression of ChromHMM transition states
+#Import data
+
+#H3K4me3 gaining H3K27ac
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E2_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E2_E3 <- data.frame(transition="E2_E3", log2FoldChange=res_subset$log2FoldChange)
+
+#Unmodified gaining H3K27ac
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E3_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E3_E4 <- data.frame(transition="E3_E4", log2FoldChange=res_subset$log2FoldChange)
+
+#Combine data
+trans_change <- rbind(E2_E3, E3_E4)
+ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
+       geom_boxplot()
+
+save.image("RNAseq_DESeq_analysis_16112021.RData")
