@@ -99,3 +99,23 @@ write.table(x = subseg,
             col.names = F,
             row.names = F,
             sep = "\t")
+
+#Unmodified gaining H3K27me3 during HN137Pri-HN137Met transition
+E4_E5 <- which(segment_combined$state == "E4-E5")
+subseg <- segment_combined[E4_E5,]
+write.table(x = subseg,
+            file = "HN137Pri_HN137Met_E4_E5_regions.bed", 
+            quote = F,
+            col.names = F,
+            row.names = F,
+            sep = "\t")
+
+#H3K27me3 becoming unmodified during HN137Pri-HN137Met transition
+E5_E4 <- which(segment_combined$state == "E5-E4")
+subseg <- segment_combined[E5_E4,]
+write.table(x = subseg,
+            file = "HN137Pri_HN137Met_E5_E4_regions.bed", 
+            quote = F,
+            col.names = F,
+            row.names = F,
+            sep = "\t")
