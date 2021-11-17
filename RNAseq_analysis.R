@@ -242,6 +242,8 @@ plotCounts(dds, gene = "ENSG00000137693.14" , intgroup=c("Sample"))
 #Check gene expression of ChromHMM transition states
 #Import data
 
+setwd("E:/snCUT_RUN/results/ChromHMM")
+
 #H3K4me3 gaining H3K27ac
 primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E2_regions_nearest_gene.bed", header = F)
 head(primet_nearest_genes)
