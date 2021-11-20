@@ -27,4 +27,12 @@ grep -c "." /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.tagAlig
 done
 
 
+#For each paired ended and deduplicated single cell bam file, a tagAlign bed file was created, intersected with reference Blacklist file, then then the number of intersections were counted
+for i in {1..192}
+do
+bedtools bamtobed -i /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.bam | awk 'BEGIN{OFS="\t"}{$4="N";$5="1000";print $0}' > /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.tagAlign
+bedtools sort -i /mnt/raid5/cutnrun/reference/regulatoryFeatures/blacklist_20211120/hg38_sorted.blacklist.bed | bedtools merge -i stdin | bedtools intersect -u -a /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.tagAlign -b stdin | wc -l
+done
+
+
 
