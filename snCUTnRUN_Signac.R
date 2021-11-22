@@ -306,10 +306,11 @@ peaks <- CallPeaks(
   object = HN,
   assay = "bin",
   group.by = "Experiment",
-  broad = T,
+  broad = F,
   macs2.path = "/home/cutnrun/miniconda3/bin/macs2",
   outdir = getwd(),
-  combine.peaks = T
+  combine.peaks = T,
+  additional.args = "--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits"
 )
 
 save.image(file = paste0(histone,".RData")) #Checkpoint, optional
