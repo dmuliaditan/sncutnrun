@@ -1,5 +1,5 @@
 library(ggplot2)
-setwd("E:/snCUT_RUN/results")
+setwd("D:/snCUT_RUN/metadata")
 
 data  <- read.csv("onlySingleCellUMR_FRiP_data.csv", header = T)
 
