@@ -35,15 +35,15 @@ set.seed(1234)
 
 #Fetch the fragment file and create the bin matrix
 #Define the path of the fragment file
-setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM_072021/K4me3/")
+setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
 
-#For H3K4me3
+#For H3K27ac
 #Also import single-cell metadata  and genome
-fragment.path <- "/mnt/raid5/cutnrun/signac/K4me3_combined_sorted.bed.gz"
-barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K4me3_barcodes.txt", header = F)
+fragment.path <- "/mnt/raid5/cutnrun/signac/K27ac_combined_sorted.bed.gz"
+barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K27ac_barcodes_new.txt", header = T)
 colnames(barcodes) <- c("Barcode", "UMRs", "Date", "Experiment", "Reads_in_Peaks", 
                         "Reads_in_Blacklist", "Pct_reads_in_peaks", "Pct_reads_in_blacklist")
-histone <- "H3K4me3" #Set which histone modification is being analysed
+histone <- "H3K27ac" #Set which histone modification is being analysed
 genome <- seqlengths(BSgenome.Hsapiens.UCSC.hg38) #Specify genome build (here hg38 was used)
 
 #Make the fragment object from the fragment file
@@ -64,25 +64,17 @@ bin_matrix <- readRDS(paste0(histone,"_bin_matrix.rds"))
 chrom_assay <- CreateChromatinAssay(
   counts = bin_matrix,
   sep = c(":", "-"),
-  genome = genome,
+  genome = 'hg38',
   fragments = fragment.path,
   min.cells = 0,
   min.features = 200
 )
 
+
 #Process the metadata for the cells, filter out cells with <200 fragments
 low_umr_ind <- which(barcodes$UMRs <= 201)
 barcodes <- barcodes[-low_umr_ind,]
 barcodes <- droplevels.data.frame(x = barcodes)
-HN@meta.data$Experiment <-  ifelse(HN@meta.data$Experiment == "120pri_k27ac", "HN120Pri", 
-                                   ifelse(HN@meta.data$Experiment == "120met_k27ac", "HN120Met", 
-                                          ifelse(HN@meta.data$Experiment == "120pcr_k27ac", "HN120PCR",
-                                                 ifelse(HN@meta.data$Experiment == "137pri_k27ac", "HN137Pri",
-                                                        ifelse(HN@meta.data$Experiment == "137met_k27ac", "HN137Met", 
-                                                               "HN137PCR"))))) #Improve label naming
-HN@meta.data$Experiment <- factor(HN@meta.data$Experiment, levels = c("HN120Pri", "HN120Met", "HN120PCR",
-                                                                      "HN137Pri", "HN137Met", "HN137PCR"))
-
 
 #Create Seurat object
 HN <- CreateSeuratObject(
@@ -108,6 +100,9 @@ HN@meta.data <- cbind(HN@meta.data, order[,c(2:8)])
 HN
 HN[['bin']]
 granges(HN)
+HN@meta.data$Experiment <- factor(HN@meta.data$Experiment, levels = c("HN120PRI", "HN120MET", "HN120PCR",
+                                                                      "HN120PRI", "HN120MET", "HN137PCR"))
+
 
 #Extract gene annotations from EnsDb
 annotations <- GetGRangesFromEnsDb(ensdb = EnsDb.Hsapiens.v86)
@@ -133,6 +128,10 @@ TSSPlot(HN, group.by = 'high.tss') + NoLegend() + ylim(c(0,5))
 #QC4: Percent reads in peaks
 #QC5: Percent reads in blacklist
 
+#Reads in peaks and blacklist should be in percentages
+HN@meta.data$Pct_reads_in_peaks <- HN@meta.data$Pct_reads_in_peaks*100
+HN@meta.data$Pct_reads_in_blacklist <- HN@meta.data$Pct_reads_in_blacklist*100
+
 #Plot QC figures
 VlnPlot(object = HN, features = c('Pct_reads_in_peaks', 
                                   'UMRs', 
@@ -151,8 +150,8 @@ HN <- subset(
   subset = 
     UMRs > 1000 &
     UMRs < 100000 &
-    Pct_reads_in_peaks > 5 &
-    Pct_reads_in_blacklist < 0.1 &
+    Pct_reads_in_peaks > 25 &
+    Pct_reads_in_blacklist < 0.5 &
     nucleosome_signal < 5 &
     TSS.enrichment > 0.5
 )
@@ -270,7 +269,7 @@ VlnPlot(object = HN,
 
 #Trajectory analysis with Monocle3, HN120 and HN137 separately
 #Here HN120 cell lines were used as en example
-HN120 <- HN[, HN$Experiment %in% c("HN120Pri", "HN120Met", "HN120PCR")]
+HN120 <- HN[, HN$Experiment %in% c("HN120PRI", "HN120MET", "HN120PCR")]
 HN.cds <- as.cell_data_set(x = HN120)
 HN.cds <- cluster_cells(cds = HN.cds, 
                         reduction_method = "UMAP",
@@ -285,7 +284,7 @@ HN.cds <- learn_graph(HN.cds,
 #Order cells, use primary cells as root
 HN.cds <- order_cells(HN.cds, 
                       reduction_method = "UMAP",
-                      root_cells = rownames(HN120@meta.data)[HN120@meta.data$Experiment == "HN120Pri"])
+                      root_cells = rownames(HN120@meta.data)[HN120@meta.data$Experiment == "HN120PRI"])
 
 #Plot pseudotime
 plot_cells(
@@ -334,7 +333,7 @@ for (j in c(coverage_genes)) {
     peaks = T,
     extend.upstream = 20000,
     extend.downstream = 20000
-    #, idents = c("HN120Pri", "HN120Met", "HN120PCR") #Unhash to look at specific cell lines
+    #, idents = c("HN120PRI", "HN120MET", "HN120PCR") #Unhash to look at specific cell lines
   )
   print(g)
   dev.off()
@@ -390,14 +389,14 @@ write.table (HN$chromvar@data, paste0(histone, "_deviation.txt"),
 
 #Motif analysis: everything at the same time
 comparisons <- list()
-comparisons[[1]] <- c("HN120Pri", "HN120Met")
-comparisons[[2]] <- c("HN120Pri", "HN120PCR")
-comparisons[[3]] <- c("HN120Met", "HN120Pri")
-comparisons[[4]] <- c("HN120PCR", "HN120Pri")
-comparisons[[5]] <- c("HN137Pri", "HN137Met")
-comparisons[[6]] <- c("HN137Pri", "HN137PCR")
-comparisons[[7]] <- c("HN137Met", "HN137Pri")
-comparisons[[8]] <- c("HN137PCR", "HN137Pri")
+comparisons[[1]] <- c("HN120PRI", "HN120MET")
+comparisons[[2]] <- c("HN120PRI", "HN120PCR")
+comparisons[[3]] <- c("HN120MET", "HN120PRI")
+comparisons[[4]] <- c("HN120PCR", "HN120PRI")
+comparisons[[5]] <- c("HN120PRI", "HN120MET")
+comparisons[[6]] <- c("HN120PRI", "HN137PCR")
+comparisons[[7]] <- c("HN120MET", "HN120PRI")
+comparisons[[8]] <- c("HN137PCR", "HN120PRI")
 
 for (o in 1:8) {
   print(paste(o))
@@ -455,7 +454,7 @@ for (o in 1:8) {
 da_peaks <- FindMarkers(
   object = HN,
   ident.1 = 'HN120PCR',
-  ident.2 = 'HN120Pri',
+  ident.2 = 'HN120PRI',
   only.pos = TRUE,
   test.use = 'LR',
   latent.vars = 'nCount_peak',
@@ -540,9 +539,9 @@ FeaturePlot(
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
 
-################### HN120PriMet and HN137PriPCR analysis ###########################
+################### HN120PRIMet and HN120PRIPCR analysis ###########################
 Idents(HN) <- factor(Idents(HN), 
-                     levels = c("HN120Pri", "HN120Met", "HN120PCR", "HN137Pri", "HN137Met", "HN137PCR"))
+                     levels = c("HN120PRI", "HN120MET", "HN120PCR", "HN120PRI", "HN120MET", "HN137PCR"))
 
 #Find top 50 differential peaks to create a cell line specific 'Module'
 HN.markers <- FindAllMarkers(object = HN, 
@@ -569,16 +568,16 @@ closest_genes <- ClosestFeature(HN, regions = top50$gene)
 top50 %>% print(n = 300)  
 
 #Create modules
-HN120Pri_gene<-top50$gene[1:50]  
-HN120Met_gene<-top50$gene[51:100]  
+HN120PRI_gene<-top50$gene[1:50]  
+HN120MET_gene<-top50$gene[51:100]  
 HN120PCR_gene<-top50$gene[101:150]
-HN137Pri_gene<-top50$gene[151:200]  
-HN137Met_gene<-top50$gene[201:250]  
+HN120PRI_gene<-top50$gene[151:200]  
+HN120MET_gene<-top50$gene[201:250]  
 HN137PCR_gene<-top50$gene[251:300]  
-modules <- list(HN120Pri_gene, HN120Met_gene, HN120PCR_gene,
-                HN137Pri_gene, HN137Met_gene, HN137PCR_gene)
-names(modules) <- c("HN120Pri", "HN120Met", "HN120PCR",
-                    "HN137Pri", "HN137Met", "HN137PCR")
+modules <- list(HN120PRI_gene, HN120MET_gene, HN120PCR_gene,
+                HN120PRI_gene, HN120MET_gene, HN137PCR_gene)
+names(modules) <- c("HN120PRI", "HN120MET", "HN120PCR",
+                    "HN120PRI", "HN120MET", "HN137PCR")
 
 #Save module peaks as bed files
 #for (k in names(modules)) {
@@ -603,9 +602,9 @@ HN <- AddChromatinModule(object = HN,
                           verbose = TRUE)
 
 
-my_comparisons <- list( c("HN120Pri", "HN120Met"), c("HN120Met", "HN120PCR"), c("HN120Pri", "HN120PCR"))
+my_comparisons <- list( c("HN120PRI", "HN120MET"), c("HN120MET", "HN120PCR"), c("HN120PRI", "HN120PCR"))
 VlnPlot(object=HN, features='HN120PCR', 
-        idents = c("HN120Pri", "HN120Met", "HN120PCR"), cols = c("#F8766D", "#D39200", "#00BA38")) +
+        idents = c("HN120PRI", "HN120MET", "HN120PCR"), cols = c("#F8766D", "#D39200", "#00BA38")) +
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
   xlab("")  +
   ylim(c(-5, 15)) +
@@ -621,38 +620,38 @@ VlnPlot(object=HN, features='HN120PCR',
 module.scores <- HN@meta.data[,21:26]
 module.scores[is.na(module.scores)] <- 0
 
-#HN120PriMet analysis
+#HN120PRIMet analysis
 HN120_metadata <- HN@meta.data[which(grepl(pattern = "HN120", HN@meta.data$Experiment) == T),]
 HN120_index <- which(rownames(module.scores) %in% row.names(HN120_metadata))
 module.scores.HN120 <- module.scores[HN120_index,]
 module.scores.HN120$orig_ident <- HN120_metadata$Experiment
 
 module.scores.HN120$Ident <- 0
-module.scores.HN120$Ident <- ifelse(test = module.scores.HN120$HN120Pri > quantile(module.scores.HN120$HN120Pri)[4]
-                                    & module.scores.HN120$HN120Met > quantile(module.scores.HN120$HN120Met)[4]
-                                    & module.scores.HN120$orig_ident == "HN120Pri", 
-                                    yes = "HN120PriMet", module.scores.HN120$orig_ident)
+module.scores.HN120$Ident <- ifelse(test = module.scores.HN120$HN120PRI > quantile(module.scores.HN120$HN120PRI)[4]
+                                    & module.scores.HN120$HN120MET > quantile(module.scores.HN120$HN120MET)[4]
+                                    & module.scores.HN120$orig_ident == "HN120PRI", 
+                                    yes = "HN120PRIMet", module.scores.HN120$orig_ident)
 
-HN120PriMet_index <- rownames(module.scores.HN120)[which(module.scores.HN120$Ident == "HN120PriMet")]
+HN120PRIMet_index <- rownames(module.scores.HN120)[which(module.scores.HN120$Ident == "HN120PRIMet")]
 table(module.scores.HN120$orig_ident) #Old ident
 table(module.scores.HN120$Ident) #New ident
 
-HN@meta.data$subclust <- ifelse(rownames(HN@meta.data) %in% HN120PriMet_index, "HN120PriMet", HN@meta.data$Experiment)
-HN@meta.data$subclust <- factor(HN@meta.data$subclust, levels = c("HN120Pri", "HN120Met", "HN120PCR",
-                                                                  "HN120PriMet", "HN137Pri", 
-                                                                  "HN137Met", "HN137PCR"))
+HN@meta.data$subclust <- ifelse(rownames(HN@meta.data) %in% HN120PRIMet_index, "HN120PRIMet", HN@meta.data$Experiment)
+HN@meta.data$subclust <- factor(HN@meta.data$subclust, levels = c("HN120PRI", "HN120MET", "HN120PCR",
+                                                                  "HN120PRIMet", "HN120PRI", 
+                                                                  "HN120MET", "HN137PCR"))
 
 #Change default identity to subclust identity
-Idents(HN) <- factor(HN@meta.data$subclust, levels = c("HN120Pri", "HN120Met", "HN120PCR",
-                                                       "HN120PriMet", "HN137Pri", 
-                                                       "HN137Met", "HN137PCR"))
+Idents(HN) <- factor(HN@meta.data$subclust, levels = c("HN120PRI", "HN120MET", "HN120PCR",
+                                                       "HN120PRIMet", "HN120PRI", 
+                                                       "HN120MET", "HN137PCR"))
 
-#Dimplot HN120 with HN120PriMet
+#Dimplot HN120 with HN120PRIMet
 DimPlot(object = HN, group.by="subclust", label = F, pt.size = 3, 
-        cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120Pri" |
-                                               HN@meta.data$subclust == "HN120Met" |
+        cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120PRI" |
+                                               HN@meta.data$subclust == "HN120MET" |
                                                HN@meta.data$subclust == "HN120PCR" |
-                                               HN@meta.data$subclust == "HN120PriMet")]) +
+                                               HN@meta.data$subclust == "HN120PRIMet")]) +
   scale_colour_manual(values = c("#7F20DF", "#CD3238", "#32CDC7", "#80DF20")) +
   ggtitle(histone) +
   xlab("UMAP 1") +
@@ -664,7 +663,7 @@ DimPlot(object = HN, group.by="subclust", label = F, pt.size = 3,
         title = element_text(size = 30),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
-#Redo marker analysis with HN120PriMet subpopulation
+#Redo marker analysis with HN120PRIMet subpopulation
 HN.markers <- FindAllMarkers(object = HN, 
                              assay = "peak", 
                              only.pos = TRUE, 
@@ -682,38 +681,38 @@ DoHeatmap(object = HN,
           slot="counts", 
           size = 5, 
           angle = 90,
-          cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120Pri" |
-                                                 HN@meta.data$subclust == "HN120Met" |
+          cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120PRI" |
+                                                 HN@meta.data$subclust == "HN120MET" |
                                                  HN@meta.data$subclust == "HN120PCR" |
-                                                 HN@meta.data$subclust == "HN120PriMet")]) +
+                                                 HN@meta.data$subclust == "HN120PRIMet")]) +
   ggplot2::theme(axis.text = element_blank(),
                  legend.position = "none"
                  ) 
 
 top50 %>% print(n = 350)  
-HN120Pri_gene<-top50$gene[1:15]  
-HN120Met_gene<-top50$gene[16:65]  
+HN120PRI_gene<-top50$gene[1:15]  
+HN120MET_gene<-top50$gene[16:65]  
 HN120PCR_gene<-top50$gene[66:115]
-HN120PriMet_gene<-top50$gene[116:165]
-HN137Pri_gene<-top50$gene[166:215]  
-HN137Met_gene<-top50$gene[216:265]  
+HN120PRIMet_gene<-top50$gene[116:165]
+HN120PRI_gene<-top50$gene[166:215]  
+HN120MET_gene<-top50$gene[216:265]  
 HN137PCR_gene<-top50$gene[266:315]  
-modules <- list(HN120Pri_gene, HN120Met_gene, HN120PCR_gene, HN120PriMet_gene,
-                HN137Pri_gene, HN137Met_gene, HN137PCR_gene)
-names(modules) <- c("HN120Pri", "HN120Met", "HN120PCR", "HN120PriMet",
-                    "HN137Pri", "HN137Met", "HN137PCR")
+modules <- list(HN120PRI_gene, HN120MET_gene, HN120PCR_gene, HN120PRIMet_gene,
+                HN120PRI_gene, HN120MET_gene, HN137PCR_gene)
+names(modules) <- c("HN120PRI", "HN120MET", "HN120PCR", "HN120PRIMet",
+                    "HN120PRI", "HN120MET", "HN137PCR")
 
 #Re-add chromatin modules
 HN@meta.data <- HN@meta.data[,-c(21:26)]
 HN <- AddChromatinModule(object = HN, modules, BSgenome.Hsapiens.UCSC.hg38, assay = 'peak', verbose = TRUE)
 
 #Plot new module scores: HN120
-my_comparisons <- list( c("HN120Pri", "HN120Met"), c("HN120Met", "HN120PriMet"), c("HN120Pri", "HN120PriMet"))
-VlnPlot(object=HN, features='HN120Met',
-        idents = c("HN120Pri", "HN120Met", "HN120PriMet","HN120PCR")) +
+my_comparisons <- list( c("HN120PRI", "HN120MET"), c("HN120MET", "HN120PRIMet"), c("HN120PRI", "HN120PRIMet"))
+VlnPlot(object=HN, features='HN120MET',
+        idents = c("HN120PRI", "HN120MET", "HN120PRIMet","HN120PCR")) +
   xlab("")  +
   ylim(c(-5, 15)) +
-  ggtitle("HN120Met Module Score") +
+  ggtitle("HN120MET Module Score") +
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
   scale_fill_manual(values = c("#F8766D", "#D39200", "#00BA38", "#DB72FB")) +
   theme(title = element_text(size = 24),
@@ -725,9 +724,9 @@ VlnPlot(object=HN, features='HN120Met',
   stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(8,10,12), label = "p.signif")
 
 #Check that UMR and FRiP are not confounding factors in PriMet analysis
-### HN120PriMet UMR count
-my_comparisons_HN120 <- list( c("HN120Pri", "HN120Met"), c("HN120Pri", "HN120PriMet"), c("HN120Met", "HN120PriMet") )
-ggplot(subset(HN@meta.data, subclust %in% c("HN120Pri", "HN120Met", "HN120PriMet")), 
+### HN120PRIMet UMR count
+my_comparisons_HN120 <- list( c("HN120PRI", "HN120MET"), c("HN120PRI", "HN120PRIMet"), c("HN120MET", "HN120PRIMet") )
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet")), 
        mapping = aes(x = subclust, y = UMRs, fill = subclust))+
   geom_violin(lwd=1) +
   geom_boxplot(width=0.3, lwd=1) +
@@ -743,8 +742,8 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120Pri", "HN120Met", "HN120PriMet
         panel.border = element_rect(colour = "black", fill=NA,size=0.5  ),
         axis.line = element_blank())
 
-### HN120PriMet FRiP count
-ggplot(subset(HN@meta.data, subclust %in% c("HN120Pri", "HN120Met", "HN120PriMet")), 
+### HN120PRIMet FRiP count
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet")), 
        mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
   geom_violin(lwd=1) +
   geom_boxplot(width=0.3, lwd=1) +
@@ -762,15 +761,15 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120Pri", "HN120Met", "HN120PriMet
         axis.line = element_blank())
 
 #Linear regression to show that UMRs are not correlated with module scores
-ggplot(subset(HN@meta.data, subclust %in% c("HN120PriMet")), 
-       mapping = aes(x = Pct_reads_in_peaks, y = HN120Met))+
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRIMet")), 
+       mapping = aes(x = Pct_reads_in_peaks, y = HN120MET))+
   geom_point() +
   geom_smooth(method = "lm") +
   stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
   stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
   theme_bw() +
-  ylab("HN120Met Module Score") +
-  xlab("HN120PriMet - Pct reads in Peaks") +
+  ylab("HN120MET Module Score") +
+  xlab("HN120PRIMet - Pct reads in Peaks") +
   theme(legend.position = "none",
         axis.title.x = element_text(size = 28),
         axis.title.y = element_text(size=28),
@@ -780,7 +779,7 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120PriMet")),
         axis.line = element_blank()) 
 
 
-#HN137PriPCR analysis
+#HN120PRIPCR analysis
 HN@meta.data <- HN@meta.data[,-c(21:27)]
 HN137_metadata <- HN@meta.data[which(grepl(pattern = "HN137", HN@meta.data$Experiment) == T),]
 HN137_index <- which(rownames(module.scores) %in% row.names(HN137_metadata))
@@ -788,30 +787,30 @@ module.scores.HN137 <- module.scores[HN137_index,]
 module.scores.HN137$orig_ident <- HN137_metadata$Experiment
 
 module.scores.HN137$Ident <- 0
-module.scores.HN137$Ident <- ifelse(test = module.scores.HN137$HN137Pri > quantile(module.scores.HN137$HN137Pri)[4]
+module.scores.HN137$Ident <- ifelse(test = module.scores.HN137$HN120PRI > quantile(module.scores.HN137$HN120PRI)[4]
                                     & module.scores.HN137$HN137PCR > quantile(module.scores.HN137$HN137PCR)[4]
-                                    & module.scores.HN137$orig_ident == "HN137Pri", 
-                                    yes = "HN137PriPCR", module.scores.HN137$orig_ident)
+                                    & module.scores.HN137$orig_ident == "HN120PRI", 
+                                    yes = "HN120PRIPCR", module.scores.HN137$orig_ident)
 
-HN137PriPCR_index <- rownames(module.scores.HN137)[which(module.scores.HN137$Ident == "HN137PriPCR")]
+HN120PRIPCR_index <- rownames(module.scores.HN137)[which(module.scores.HN137$Ident == "HN120PRIPCR")]
 table(module.scores.HN137$orig_ident) #Old ident
 table(module.scores.HN137$Ident) #New ident
 
-HN@meta.data$subclust <- ifelse(rownames(HN@meta.data) %in% HN137PriPCR_index, "HN137PriPCR", HN@meta.data$Experiment)
-HN@meta.data$subclust <- factor(HN@meta.data$subclust, levels = c("HN120Pri", "HN120Met", "HN120PCR",
-                                                                 "HN137Pri", "HN137Met", 
-                                                                 "HN137PCR", "HN137PriPCR"))
+HN@meta.data$subclust <- ifelse(rownames(HN@meta.data) %in% HN120PRIPCR_index, "HN120PRIPCR", HN@meta.data$Experiment)
+HN@meta.data$subclust <- factor(HN@meta.data$subclust, levels = c("HN120PRI", "HN120MET", "HN120PCR",
+                                                                 "HN120PRI", "HN120MET", 
+                                                                 "HN137PCR", "HN120PRIPCR"))
 
 #Change default identity to subclust identity
-Idents(HN) <- factor(HN@meta.data$subclust, levels = c("HN120Pri", "HN120Met", "HN120PCR",
-                                                       "HN137Pri", "HN137Met", "HN137PCR", "HN137PriPCR"))
+Idents(HN) <- factor(HN@meta.data$subclust, levels = c("HN120PRI", "HN120MET", "HN120PCR",
+                                                       "HN120PRI", "HN120MET", "HN137PCR", "HN120PRIPCR"))
 
-#Dimplot HN137 with HN137PriPCR
+#Dimplot HN137 with HN120PRIPCR
 DimPlot(object = HN, group.by="subclust", label = F, pt.size = 3, 
-        cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN137Pri" |
-                                               HN@meta.data$subclust == "HN137Met" |
+        cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120PRI" |
+                                               HN@meta.data$subclust == "HN120MET" |
                                                HN@meta.data$subclust == "HN137PCR" |
-                                               HN@meta.data$subclust == "HN137PriPCR")]) +
+                                               HN@meta.data$subclust == "HN120PRIPCR")]) +
   scale_colour_manual(values = c("#7F20DF", "#CD3238", "#32CDC7", "#80DF20")) +
   ggtitle(histone) +
   xlab("UMAP 1") +
@@ -823,7 +822,7 @@ DimPlot(object = HN, group.by="subclust", label = F, pt.size = 3,
         title = element_text(size = 30),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
-#Redo marker analysis with HN137PriPCR subpopulation
+#Redo marker analysis with HN120PRIPCR subpopulation
 HN.markers <- FindAllMarkers(object = HN, 
                              assay = "peak", 
                              only.pos = TRUE, 
@@ -837,24 +836,24 @@ DoHeatmap(object = HN, assay = "peak", features = top50$gene, label = TRUE, slot
                  legend.title = element_blank()) 
 
 top50 %>% print(n = 350)  
-HN120Pri_gene<-top50$gene[1:50]  
-HN120Met_gene<-top50$gene[51:100]  
+HN120PRI_gene<-top50$gene[1:50]  
+HN120MET_gene<-top50$gene[51:100]  
 HN120PCR_gene<-top50$gene[101:150]
-HN137Pri_gene<-top50$gene[151:183]  
-HN137Met_gene<-top50$gene[184:233]  
+HN120PRI_gene<-top50$gene[151:183]  
+HN120MET_gene<-top50$gene[184:233]  
 HN137PCR_gene<-top50$gene[234:283]  
-HN137PriPCR_gene<-top50$gene[284:333]
-modules <- list(HN137Pri_gene, HN137Met_gene, HN137PCR_gene,
-                HN137Pri_gene, HN137Met_gene, HN137PCR_gene, HN137PriPCR_gene)
-names(modules) <- c("HN137Pri", "HN137Met", "HN137PCR",
-                    "HN137Pri", "HN137Met", "HN137PCR", "HN137PriPCR")
+HN120PRIPCR_gene<-top50$gene[284:333]
+modules <- list(HN120PRI_gene, HN120MET_gene, HN137PCR_gene,
+                HN120PRI_gene, HN120MET_gene, HN137PCR_gene, HN120PRIPCR_gene)
+names(modules) <- c("HN120PRI", "HN120MET", "HN137PCR",
+                    "HN120PRI", "HN120MET", "HN137PCR", "HN120PRIPCR")
 
 #Re-add chromatin modules
 HN@meta.data <- HN@meta.data[,-c(21:26)]
 HN <- AddChromatinModule(object = HN, modules, BSgenome.Hsapiens.UCSC.hg38, assay = 'peak', verbose = TRUE)
 
 #Plot new module scores: HN137
-my_comparisons <- list( c("HN137Pri", "HN137PCR"), c("HN137PCR", "HN137PriPCR"), c("HN137Pri", "HN137PriPCR"))
+my_comparisons <- list( c("HN120PRI", "HN137PCR"), c("HN137PCR", "HN120PRIPCR"), c("HN120PRI", "HN120PRIPCR"))
 VlnPlot(object=HN, features='HN137PCR') +
   xlab("")  +
   ylim(c(-6, 25)) +
@@ -869,9 +868,9 @@ VlnPlot(object=HN, features='HN137PCR') +
   stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(14,18,22), label = "p.signif")
 
 #Check that UMR and FRiP are not confounding factors in PriPCR analysis
-### HN137PriPCR UMR count
-my_comparisons_HN137 <- list( c("HN137Pri", "HN137PCR"), c("HN137Pri", "HN137PriPCR"), c("HN137PCR", "HN137PriPCR") )
-ggplot(subset(HN@meta.data, subclust %in% c("HN137Pri", "HN137PCR", "HN137PriPCR")), 
+### HN120PRIPCR UMR count
+my_comparisons_HN137 <- list( c("HN120PRI", "HN137PCR"), c("HN120PRI", "HN120PRIPCR"), c("HN137PCR", "HN120PRIPCR") )
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN137PCR", "HN120PRIPCR")), 
        mapping = aes(x = subclust, y = UMRs, fill = subclust))+
   geom_violin(lwd=1) +
   geom_boxplot(width=0.3, lwd=1) +
@@ -887,8 +886,8 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN137Pri", "HN137PCR", "HN137PriPCR
         panel.border = element_rect(colour = "black", fill=NA,size=0.5  ),
         axis.line = element_blank())
 
-### HN137PriPCR FRiP count
-ggplot(subset(HN@meta.data, subclust %in% c("HN137Pri", "HN137PCR", "HN137PriPCR")), 
+### HN120PRIPCR FRiP count
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN137PCR", "HN120PRIPCR")), 
        mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
   geom_violin(lwd=1) +
   geom_boxplot(width=0.3, lwd=1) +
@@ -906,7 +905,7 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN137Pri", "HN137PCR", "HN137PriPCR
         axis.line = element_blank())
 
 #Linear regression to show that UMRs are not correlated with module scores
-ggplot(subset(HN@meta.data, subclust %in% c("HN137PriPCR")), 
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRIPCR")), 
        mapping = aes(x = UMRs, y = HN137PCR))+
   geom_point() +
   geom_smooth(method = "lm") +
@@ -914,7 +913,7 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN137PriPCR")),
   stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
   theme_bw() +
   ylab("HN137PCR Module Score") +
-  xlab("HN137PriPCR - UMRs") +
+  xlab("HN120PRIPCR - UMRs") +
   theme(legend.position = "none",
         axis.title.x = element_text(size = 28),
         axis.title.y = element_text(size=28),
@@ -923,11 +922,11 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN137PriPCR")),
         panel.border = element_rect(colour = "black", fill=NA,size=0.5),
         axis.line = element_blank()) 
 
-#HN120PriMet motif analysis
+#HN120PRIMet motif analysis
 da_peaks_primet <- FindMarkers(
   object = HN,
-  ident.1 = 'HN137PriPCR',
-  ident.2 = 'HN137Pri',
+  ident.1 = 'HN120PRIPCR',
+  ident.2 = 'HN120PRI',
   only.pos = TRUE,
   test.use = 'LR',
   latent.vars = 'nCount_peak',
@@ -955,7 +954,7 @@ enriched.motifs[1:50,]
 sig_ind <- which(enriched.motifs$pvalue < 0.005)
 motifs <- data.frame(motifs=enriched.motifs$motif.name[sig_ind])
 write.table(x = motifs,
-            file = "HN120PCR_HN120Pri_TF_enriched.bed",
+            file = "HN120PCR_HN120PRI_TF_enriched.bed",
             col.names = F,
             row.names = F,
             quote = F,
@@ -999,7 +998,7 @@ module.scores[hn137_pripcr.index,]
 da_peaks <- FindMarkers(
   object = HN,
   ident.1 = c('HN120PCR'),
-  ident.2 = c('HN120Pri'),
+  ident.2 = c('HN120PRI'),
   only.pos = TRUE,
   test.use = 'LR',
   latent.vars = 'nCount_peak',
@@ -1027,7 +1026,7 @@ availableCategories(job)
 availableOntologies(job, category = "Phenotype")
 
 GO_table <- tb$`GO Biological Process`[1:10,c(2,9)]
-write.table(x = GO_table, file = "GO_K4me3_HN137Pri_enriched_vs_HN137PCR.txt", quote = F, sep = "\t", row.names = F, col.names = F)
+write.table(x = GO_table, file = "GO_K4me3_HN120PRI_enriched_vs_HN137PCR.txt", quote = F, sep = "\t", row.names = F, col.names = F)
 
 
 #Only use in windows
@@ -1038,14 +1037,14 @@ Fragments(HN)<-NULL
 HN <- SetAssayData(HN, slot = "fragments", new.data = fragment)
 
 #Coverageplot
-Idents(HN) <- factor(HN@meta.data$Experiment, levels = c("HN120Pri", "HN120Met", "HN120PCR", "HN137Pri", "HN137Met", "HN137PCR"))
+Idents(HN) <- factor(HN@meta.data$Experiment, levels = c("HN120PRI", "HN120MET", "HN120PCR", "HN120PRI", "HN120MET", "HN137PCR"))
 
 cov_plot <- CoveragePlot(
   object = HN,
   region = "TP63",
   annotation = T,
   peaks = F,
-  idents = c("HN137Pri", "HN137Met", "HN137PCR"),
+  idents = c("HN120PRI", "HN120MET", "HN137PCR"),
   extend.upstream = 10000,
   extend.downstream = 10000
 )
