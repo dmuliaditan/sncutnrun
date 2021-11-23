@@ -25,7 +25,7 @@ set.seed(1234)
 ################################################
 ############ snCUT&RUN data analysis ###########
 ################################################
-############# v. 11 October 2021 ###############
+############# v. 23 November 2021 ###############
 
 #For Signac analysis, two files are needed: 
 #1) A fragment file, which is basically a bed file with the following columns:
@@ -300,6 +300,10 @@ plot_cells(
         legend.title = element_text(size = 24),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 remove(HN120)# Make space
+
+
+save.image(file = paste0(histone,".RData"))
+load(paste0(histone,".RData"))
 
 #Call peaks with MACS2
 peaks <- CallPeaks(
