@@ -35,15 +35,15 @@ set.seed(1234)
 
 #Fetch the fragment file and create the bin matrix
 #Define the path of the fragment file
-setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
+setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K4me3")
 
-#For H3K27ac
+#For H3K27ac or H3K4me3
 #Also import single-cell metadata  and genome
-fragment.path <- "/mnt/raid5/cutnrun/signac/K27ac_combined_sorted.bed.gz"
-barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K27ac_barcodes_new.txt", header = T)
+fragment.path <- "/mnt/raid5/cutnrun/signac/K4me3_combined_sorted.bed.gz"
+barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K4me3_barcodes_new.txt", header = T)
 colnames(barcodes) <- c("Barcode", "UMRs", "Date", "Experiment", "Reads_in_Peaks", 
                         "Reads_in_Blacklist", "Pct_reads_in_peaks", "Pct_reads_in_blacklist")
-histone <- "H3K27ac" #Set which histone modification is being analysed
+histone <- "H3K4me3" #Set which histone modification is being analysed
 genome <- seqlengths(BSgenome.Hsapiens.UCSC.hg38) #Specify genome build (here hg38 was used)
 
 #Make the fragment object from the fragment file
@@ -55,7 +55,7 @@ fragments <- CreateFragmentObject(fragment.path)
 bin_matrix <- GenomeBinMatrix( fragments = fragments, genome, binsize = 10000, process_n = 13)
 
 #Save the above results after the first generation 
-saveRDS(bin_matrix, file = paste0(histone,"_bin_matrix.rds"))
+saveRDS(bin_matrix, file = paste0(histone,"_bin_matrix2.rds"))
 
 #In all subsequent runs we can just load it from saved data
 bin_matrix <- readRDS(paste0(histone,"_bin_matrix.rds"))
@@ -89,6 +89,7 @@ HN <- subset(
   x = HN,
   subset = Barcode %in% barcodes$Barcode
 )
+HN
 HN@meta.data <- HN@meta.data[,-c(4:11)] #This step is necessary due to some errors when making the metadata of the assay
 order <- barcodes[match(rownames(HN@meta.data), barcodes$Barcode),]
 
@@ -101,7 +102,7 @@ HN
 HN[['bin']]
 granges(HN)
 HN@meta.data$Experiment <- factor(HN@meta.data$Experiment, levels = c("HN120PRI", "HN120MET", "HN120PCR",
-                                                                      "HN120PRI", "HN120MET", "HN137PCR"))
+                                                                      "HN137PRI", "HN137MET", "HN137PCR"))
 
 
 #Extract gene annotations from EnsDb
@@ -143,6 +144,7 @@ VlnPlot(object = HN, features = c('Pct_reads_in_peaks',
 #At this point save the preprocessed Signac object, before any subsetting
 saveRDS(HN, file=paste0(histone,"_orig.rds"))
 HN <- readRDS(paste0(histone,"_orig.rds")) #In all subsequent runs we can just load it from saved data
+HN
 
 #Filter cells:
 HN <- subset(
@@ -151,7 +153,7 @@ HN <- subset(
     UMRs > 1000 &
     UMRs < 100000 &
     Pct_reads_in_peaks > 25 &
-    Pct_reads_in_blacklist < 0.5 &
+    Pct_reads_in_blacklist < 1 &
     nucleosome_signal < 5 &
     TSS.enrichment > 0.5
 )
@@ -314,7 +316,7 @@ peaks <- CallPeaks(
   macs2.path = "/home/cutnrun/miniconda3/bin/macs2",
   outdir = getwd(),
   combine.peaks = T,
-  additional.args = "--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits"
+  additional.args = "--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits -B"
 )
 
 save.image(file = paste0(histone,".RData")) #Checkpoint, optional
