@@ -154,8 +154,8 @@ HN <- subset(
   subset = 
     UMRs > 1000 &
     UMRs < 100000 &
-    Pct_reads_in_peaks > 25 &
-    Pct_reads_in_blacklist < 1 &
+    Pct_reads_in_peaks > 25 & #25% threshold is used for both H3K4me3 and H3K27ac
+    Pct_reads_in_blacklist < 0.5 & # 1% is used for H3K4me3, 0.5% for H3K27ac
     nucleosome_signal < 5 &
     TSS.enrichment > 0.5
 )
@@ -305,6 +305,38 @@ plot_cells(
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 remove(HN120)# Make space
 
+# HN137 c
+HN137 <- HN[, HN$Experiment %in% c("HN137PRI", "HN137MET", "HN137PCR")]
+HN.cds <- as.cell_data_set(x = HN137)
+HN.cds <- cluster_cells(cds = HN.cds, 
+                        reduction_method = "UMAP",
+                        cluster_method = 'leiden', 
+                        num_iter = 100, 
+                        partition_qval = 0.01, 
+                        verbose = T)
+HN.cds <- learn_graph(HN.cds, 
+                      use_partition = TRUE, 
+                      verbose = T)
+
+#Order cells, use primary cells as root
+HN.cds <- order_cells(HN.cds, 
+                      reduction_method = "UMAP",
+                      root_cells = rownames(HN137@meta.data)[HN137@meta.data$Experiment == "HN137PRI"])
+
+#Plot pseudotime
+plot_cells(
+  cds = HN.cds,
+  color_cells_by = "pseudotime",
+  show_trajectory_graph = F,
+  cell_size = 2
+) +
+  theme(axis.title.x = element_text(size = 24),
+        axis.title.y = element_text(size = 24),
+        axis.text = element_text(size = 18),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 24),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5))
+remove(HN137)# Make space
 
 save.image(file = paste0(histone,".RData"))
 load(paste0(histone,".RData"))
