@@ -24,8 +24,10 @@ set.seed(1234)
 
 ################################################
 ############ snCUT&RUN data analysis ###########
-################################################
-############# v. 23 November 2021 ###############
+############# v. 25 November 2021 ##############
+
+######## All code were processed with ##########
+############## R version 4.1.1 #################
 
 #For Signac analysis, two files are needed: 
 #1) A fragment file, which is basically a bed file with the following columns:
@@ -35,15 +37,15 @@ set.seed(1234)
 
 #Fetch the fragment file and create the bin matrix
 #Define the path of the fragment file
-setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K4me3")
+setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
 
 #For H3K27ac or H3K4me3
 #Also import single-cell metadata  and genome
-fragment.path <- "/mnt/raid5/cutnrun/signac/K4me3_combined_sorted.bed.gz"
-barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K4me3_barcodes_new.txt", header = T)
+fragment.path <- "/mnt/raid5/cutnrun/signac/K27ac_combined_sorted.bed.gz"
+barcodes <- read.table(file = "/mnt/raid5/cutnrun/signac/K27ac_barcodes_new.txt", header = T)
 colnames(barcodes) <- c("Barcode", "UMRs", "Date", "Experiment", "Reads_in_Peaks", 
                         "Reads_in_Blacklist", "Pct_reads_in_peaks", "Pct_reads_in_blacklist")
-histone <- "H3K4me3" #Set which histone modification is being analysed
+histone <- "H3K27ac" #Set which histone modification is being analysed
 genome <- seqlengths(BSgenome.Hsapiens.UCSC.hg38) #Specify genome build (here hg38 was used)
 
 #Make the fragment object from the fragment file
@@ -393,6 +395,7 @@ write.table (HN$chromvar@data, paste0(histone, "_deviation.txt"),
              row.names=TRUE, 
              col.names=TRUE)
 #It's good to save image here
+save.image(file = paste0(histone,"_jaspar_added.RData")) #Checkpoint, optional
 
 #Motif analysis: everything at the same time
 
@@ -551,7 +554,7 @@ FeaturePlot(
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
 
-################### HN120PRIMet and HN120PRIPCR analysis ###########################
+################### HN120PRIMet and HN137PRIPCR analysis ###########################
 Idents(HN) <- HN@meta.data$Experiment
 Idents(HN) <- factor(Idents(HN), 
                      levels = c("HN120PRI", "HN120MET", "HN120PCR", "HN137PRI", "HN137MET", "HN137PCR"))
