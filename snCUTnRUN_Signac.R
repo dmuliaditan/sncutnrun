@@ -426,8 +426,6 @@ HN <- RunChromVAR(
 write.table (HN$chromvar@data, paste0(histone, "_deviation.txt"), 
              row.names=TRUE, 
              col.names=TRUE)
-#It's good to save image here
-save.image(file = paste0(histone,"_jaspar_added.RData")) #Checkpoint, optional
 
 #Motif analysis: everything at the same time
 
@@ -528,7 +526,10 @@ enriched.motifs <- FindMotifs(
 enriched.motifs[1:20,]
 
 #Save motif images and save ChromVAR images of motif score per cell
-for (k in c(1:10)){
+enriched.motifs$motif.name[1:50]
+pattern <- ":|-|\\(|\\."
+
+for (k in which(grepl(pattern, enriched.motifs$motif.name[1:50]) == F)){
   print(paste(k))
   png(filename = paste0(enriched.motifs$motif.name[k],"_motif.png"), width = 1000, height = 150, units = "px")
   l = MotifPlot(
@@ -585,6 +586,8 @@ FeaturePlot(
         title = element_text(size=30),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
+#It's good to save image here
+save.image(file = paste0(histone,"_jaspar_added.RData")) #Checkpoint, optional
 
 ################### HN120PRIMet and HN137PRIPCR analysis ###########################
 Idents(HN) <- HN@meta.data$Experiment
@@ -656,12 +659,13 @@ VlnPlot(object=HN, features='HN120PCR',
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
   xlab("")  +
   ylim(c(-5, 15)) +
-  theme(title = element_text(size = 28),
+  theme(title = element_text(size = 36),
         axis.title.x = element_text(size = 24),
         axis.title.y = element_text(size = 24),
         axis.text = element_text(size = 24),
         legend.text = element_text(size = 24),
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) +
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5),
+        legend.position = "none") +
   stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(9,11,13), label = "p.signif")
 
 #Put module score as a data frame
@@ -719,7 +723,6 @@ HN.markers <- FindAllMarkers(object = HN,
                              test.use = 'LR',
                              latent.vars = 'nCount_peak')
 top50 <- HN.markers %>% group_by(cluster) %>% top_n(50, avg_log2FC)
-top50 <- top50[which(grepl(pattern = "HN120PCR", x = top50$cluster) == T),] 
 closest_genes <- ClosestFeature(HN, regions = top50$gene)
 top50$gene2<-closest_genes$gene_name
 DoHeatmap(object = HN, 
@@ -759,17 +762,19 @@ my_comparisons <- list( c("HN120PRI", "HN120MET"), c("HN120MET", "HN120PRIMet"),
 VlnPlot(object=HN, features='HN120MET',
         idents = c("HN120PRI", "HN120MET", "HN120PRIMet","HN120PCR")) +
   xlab("")  +
-  ylim(c(-5, 15)) +
+  ylim(c(-5, 18)) +
   ggtitle("HN120MET Module Score") +
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_manual(values = c("#F8766D", "#D39200", "#00BA38", "#DB72FB")) +
+  scale_fill_manual(values = c("#F8766D", "#B79F00", "#00BA38", "#DB72FB")) +
   theme(title = element_text(size = 24),
-        axis.title.x = element_text(size = 24),
+        axis.title.x = element_blank(),
         axis.title.y = element_text(size = 24),
-        axis.text = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        axis.text.x = element_blank(),
         legend.text = element_text(size = 18),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5)) +
-  stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(8,10,12), label = "p.signif")
+  stat_compare_means(comparisons = my_comparisons, 
+                     method = "wilcox.test", size = 8, label.y = c(12,14,16), label = "p.signif")
 
 #Check that UMR and FRiP are not confounding factors in PriMet analysis
 ### HN120PRIMet UMR count
@@ -777,7 +782,7 @@ my_comparisons_HN120 <- list( c("HN120PRI", "HN120MET"), c("HN120PRI", "HN120PRI
 ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet")), 
        mapping = aes(x = subclust, y = UMRs, fill = subclust))+
   geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1) +
+  geom_boxplot(width=0.3, lwd=1, fill = "white") +
   scale_fill_brewer(palette = "Accent") +
   theme_bw() +
   ylim(c(0,130000)) +
@@ -794,7 +799,7 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet
 ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet")), 
        mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
   geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1) +
+  geom_boxplot(width=0.3, lwd=1, fill = "white") +
   scale_fill_brewer(palette = "Accent") +
   theme_bw() +
   ylim(c(0,70)) +
@@ -808,7 +813,8 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120PRIMet
         panel.border = element_rect(colour = "black", fill=NA,size=0.5),
         axis.line = element_blank())
 
-#Linear regression to show that UMRs are not correlated with module scores
+
+#Linear regression to show that FRIP are not correlated with module scores
 ggplot(subset(HN@meta.data, subclust %in% c("HN120PRIMet")), 
        mapping = aes(x = Pct_reads_in_peaks, y = HN120MET))+
   geom_point() +
@@ -826,6 +832,23 @@ ggplot(subset(HN@meta.data, subclust %in% c("HN120PRIMet")),
         panel.border = element_rect(colour = "black", fill=NA,size=0.5),
         axis.line = element_blank()) 
 
+#Linear regression to show that UMRs are not correlated with module scores
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRIMet")), 
+       mapping = aes(x = UMRs, y = HN120MET))+
+  geom_point() +
+  geom_smooth(method = "lm") +
+  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
+  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
+  theme_bw() +
+  ylab("HN120MET Module Score") +
+  xlab("HN120PRIMet - UMRs") +
+  theme(legend.position = "none",
+        axis.title.x = element_text(size = 28),
+        axis.title.y = element_text(size=28),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 30),
+        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
+        axis.line = element_blank()) 
 
 #HN137PRIPCR analysis
 HN@meta.data <- HN@meta.data[,-c(21:27)]
