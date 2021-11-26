@@ -28,6 +28,7 @@ for (b in seq_along(sample_names)) {
 }
 
 #Extract H3K27ac peaks from H3K27ac object
+setwd("D:/snCUT_RUN/signac/DM112021/K27ac")
 load("K27ac_final.RData")
 sample_names <- c("HN120PRI", "HN120MET", "HN120PCR", "HN137PRI", "HN137MET", "HN137PCR")
 for (b in seq_along(sample_names)) {
