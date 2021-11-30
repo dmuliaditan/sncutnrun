@@ -204,8 +204,8 @@ ggplot(geneCounts, aes(x = Type, y = count, color = Sample)) +
 #Bland-Altman plot
 library("apeglm")
 resultsNames(dds)
-res <- lfcShrink(dds, coef="Type_Metastatic_vs_Primary", type="apeglm")
-plotMA(res, ylim = c(-5, 5))
+res <- lfcShrink(dds, coef="Sample_HN137Met_vs_HN137Pri", type="apeglm")
+plotMA(res, ylim = c(-10, 10))
 
 #Gene clustering
 library("genefilter")
@@ -230,6 +230,15 @@ res$entrez <- mapIds(org.Hs.eg.db,
                      column="ENTREZID",
                      keytype="ENSEMBL",
                      multiVals="first")
+res$enstrans <- mapIds(org.Hs.eg.db,
+                     keys=ens.str,
+                     column="ENSEMBL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+
+res
+
+
 #Check top differential genes
 resOrdered <- res[order(res$pvalue),]
 head(resOrdered)
@@ -238,6 +247,103 @@ head(resOrdered)
 resOrdered <- res[order(res$log2FoldChange, decreasing = TRUE ),]
 resOrdered
 plotCounts(dds, gene = "ENSG00000137693.14" , intgroup=c("Sample"))
+
+#GO analysis
+library(goseq)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(TxDb.Hsapiens.UCSC.hg38.refGene)
+
+#
+
+rowsum.threshold <- 1 # user chosen
+fdr.threshold <- 0.05 # user chosen
+rs <- rowSums(counts(dds))
+dds <- dds[ rs > rowsum.threshold ,]
+dds <- DESeq(dds)
+res <- results(dds, independentFiltering=FALSE) # use count threshold instead of IF
+assayed.genes <- res$enstrans
+de.genes <- res$enstrans[ which(res$padj < fdr.threshold) ]
+
+gene.vector=as.integer(assayed.genes%in%de.genes)
+names(gene.vector)=assayed.genes
+head(gene.vector)
+
+#Get gene lengths
+pwf=nullp(gene.vector,"hg38","ensGene")
+head(pwf)
+plotPWF(pwf)
+
+#Wallenius approximation
+GO.wall=goseq(pwf,"hg38","ensGene")
+head(GO.wall)
+
+enriched.GO=GO.wall$category[p.adjust(GO.wall$over_represented_pvalue, method="BH")<.05]
+head(enriched.GO)
+
+#KEGG
+# Get the mapping from ENSEMBL 2 Entrez
+en2eg=as.list(org.Hs.egENSEMBL2EG)
+# Get the mapping from Entrez 2 KEGG
+eg2kegg=as.list(org.Hs.egPATH)
+# Define a function which gets all unique KEGG IDs
+# associated with a set of Entrez IDs
+grepKEGG=function(id,mapkeys){unique(unlist(mapkeys[id],use.names=FALSE))}
+# Apply this function to every entry in the mapping from
+# ENSEMBL 2 Entrez to combine the two maps
+kegg=lapply(en2eg,grepKEGG,eg2kegg)
+head(kegg)
+KEGG=goseq(pwf,gene2cat=kegg)
+
+#Using fgsea
+library(fgsea)
+
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys=ens.str,
+                     column="SYMBOL",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+ens2symbol <- as_tibble(data.frame(ENSEMBL=rownames(res), SYMBOL=res$symbol))
+ens2symbol
+
+res2 <- inner_join(as_tibble(res), ens2symbol, by=c("row"="ENSEMBL"))
+res2
+
+res3 <- res2 %>% 
+  dplyr::select(SYMBOL, stat) %>% 
+  na.omit() %>% 
+  distinct() %>% 
+  group_by(SYMBOL) %>% 
+  summarize(stat=mean(stat))
+res3
+
+ranks <- deframe(res3)
+head(ranks, 20)
+
+# Load the pathways into a named list
+pathways.hallmark <- gmtPathways("h.all.v7.4.symbols.gmt")
+pathways.hallmark %>% 
+  head() %>% 
+  lapply(head)
+
+fgseaRes <- fgsea(pathways=pathways.hallmark, stats=ranks, nperm=1000)
+#Tidy the results
+fgseaResTidy <- fgseaRes %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+# Show in a nice table:
+fgseaResTidy %>% 
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>% 
+  arrange(padj) %>% 
+  DT::datatable()
+
+ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
+  geom_col(aes(fill=padj<0.05)) +
+  coord_flip() +
+  labs(x="Pathway", y="Normalized Enrichment Score",
+       title="Hallmark pathways NES from GSEA") + 
+  theme_minimal()
+
 
 #Check gene expression of ChromHMM transition states
 #Import data
