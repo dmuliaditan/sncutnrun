@@ -20,8 +20,8 @@ coldata$Patient <- factor(coldata$Patient)
 coldata$names <- coldata$Library
 coldata$files <- file.path(dir, coldata$names, "quant.sf")
 
-coldata <- coldata[coldata$Patient == "HN120",]
-coldata$Sample <- factor(coldata$Sample, levels = c("HN120Pri", "HN120Met", "HN120PCR"))
+coldata <- coldata[coldata$Patient == "HN137",]
+coldata$Sample <- factor(coldata$Sample, levels = c("HN137Pri", "HN137Met", "HN137PCR"))
 
 file.exists(coldata$files)
 
@@ -166,7 +166,7 @@ dds <- DESeq(dds)
 res <- results(dds)
 res
 resultsNames(dds)
-res <- results(dds, contrast=c("Sample","HN120PCR", "HN120Pri"))
+res <- results(dds, contrast=c("Sample","HN137Met", "HN137Pri"))
 mcols(res, use.names = TRUE)
 summary(res)
 
@@ -363,6 +363,62 @@ res_subset <- resOrdered[rnaseq_gene_index,]
 summary(res_subset$log2FoldChange)
 E1_E4 <- data.frame(transition="E1_E4", log2FoldChange=res_subset$log2FoldChange)
 
+#H3K4me3 + H3K27ac losing H3K27ac
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E1_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E2_E1 <- data.frame(transition="E2_E1", log2FoldChange=res_subset$log2FoldChange)
+
+#H3K4me3 + H3K27ac losing H3K4me3
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E3_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E2_E3 <- data.frame(transition="E2_E3", log2FoldChange=res_subset$log2FoldChange)
+
+#H3K4me3 + H3K27ac losing both markers
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E4_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E2_E4 <- data.frame(transition="E2_E4", log2FoldChange=res_subset$log2FoldChange)
+
+#Umodified gaining H3K4me3 + H3K27ac
+primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E2_regions_nearest_gene.bed", header = F)
+head(primet_nearest_genes)
+length(unique(primet_nearest_genes$V8))
+genes <- unique(primet_nearest_genes$V8)
+gene_index <- which(genes %in% resOrdered$symbol)
+length(gene_index)
+genes <- genes[gene_index]
+rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+length(rnaseq_gene_index)
+res_subset <- resOrdered[rnaseq_gene_index,]
+summary(res_subset$log2FoldChange)
+E4_E2 <- data.frame(transition="E4_E2", log2FoldChange=res_subset$log2FoldChange)
+
 #Unmodified gaining H3K27ac
 primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E3_regions_nearest_gene.bed", header = F)
 head(primet_nearest_genes)
@@ -420,9 +476,16 @@ summary(res_subset$log2FoldChange)
 E5_E4 <- data.frame(transition="E5_E4", log2FoldChange=res_subset$log2FoldChange)
 
 #Combine data
-trans_change <- rbind(E1_E2, E1_E3, E1_E4, E4_E3, E3_E4, E4_E5, E5_E4)
+trans_change <- rbind(E1_E2, E1_E3, E1_E4, E2_E1, E2_E3, E2_E4, E4_E2, E4_E3, E3_E4, E4_E5, E5_E4)
 ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
-       geom_boxplot()
+       geom_boxplot(width = 0.8) +
+      ylim(c(-16,15)) +
+      theme_bw() +
+      ylab("Log2(Fold Change)") +
+      xlab("") +
+        theme(legend.position = "none",
+        axis.title = element_text(size = 22),
+        axis.text = element_text(size = 20))
 
 write.table(x = trans_change,
             file = "gene_expression_transitions.txt",
@@ -433,10 +496,10 @@ write.table(x = trans_change,
 
 trans <- split(trans_change, factor(trans_change$transition))
 
-trans2 <- rbind(trans[[1]], trans[[2]], trans[[3]])
-trans2$transition <- factor(trans2$transition, levels = c("E1_E2", "E1_E3", "E1_E4"))
+trans2 <- rbind(trans[[1]], trans[[6]], trans[[7]])
+trans2$transition <- factor(trans2$transition, levels = c("E1_E2", "E3_E4", "E4_E3"))
 
-my_comparisons <- list( c("E1_E2", "E1_E3"), c("E1_E3", "E1_E4"), c("E1_E2", "E1_E4"))
+my_comparisons <- list( c("E1_E2", "E3_E4"), c("E3_E4", "E4_E3"), c("E1_E2", "E4_E3"))
 ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
   geom_boxplot(width = 0.8) +
   ylim(c(-16,22)) +
@@ -444,7 +507,7 @@ ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transit
   ylab("Log2(Fold Change)") +
   xlab("") +
   scale_fill_manual(values = c("#9BBEDB", "#A6D7A4", "#CBA6D1")) +
-  scale_x_discrete(breaks = c("E1_E2", "E1_E3", "E1_E4"), labels = c("E1 > E2", "E1 > E3", "E1 > E4")) +
+  scale_x_discrete(breaks = c("E1_E2", "E3_E4", "E4_E3"), labels = c("E1 > E2", "E3 > E4", "E4 > E3")) +
   stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(13,16,19), label = "p.signif") +
   theme(legend.position = "none",
         axis.title = element_text(size = 22),
@@ -452,4 +515,4 @@ ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transit
 
 
 
-save.image("RNAseq_DESeq_analysis_16112021.RData")
+save.image("RNAseq_DESeq_analysis_02122021.RData")
