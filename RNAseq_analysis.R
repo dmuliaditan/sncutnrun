@@ -20,7 +20,8 @@ coldata$Patient <- factor(coldata$Patient)
 coldata$names <- coldata$Library
 coldata$files <- file.path(dir, coldata$names, "quant.sf")
 
-coldata <- coldata[coldata$Patient == "HN137",]
+coldata <- coldata[coldata$Patient == "HN120",]
+coldata$Sample <- factor(coldata$Sample, levels = c("HN120Pri", "HN120Met", "HN120PCR"))
 
 file.exists(coldata$files)
 
@@ -165,7 +166,7 @@ dds <- DESeq(dds)
 res <- results(dds)
 res
 resultsNames(dds)
-res <- results(dds, contrast=c("Sample","HN137Met", "HN137Pri"))
+res <- results(dds, contrast=c("Sample","HN120PCR", "HN120Pri"))
 mcols(res, use.names = TRUE)
 summary(res)
 
@@ -242,61 +243,31 @@ res
 #Check top differential genes
 resOrdered <- res[order(res$pvalue),]
 head(resOrdered)
+write.table(x = resOrdered[,c(7,6,2)],
+            file = "HN120PCR_vs_HN120Pri_top_differentially regulated gene.txt", 
+            quote = F,
+            sep = "\t",
+            row.names = F,
+            col.names = T
+)
 
 #Check top upregulated genes
 resOrdered <- res[order(res$log2FoldChange, decreasing = TRUE ),]
 resOrdered
+write.table(x = resOrdered[,c(7,6,2)],
+            file = "HN120PCR_vs_HN120Pri_top_upregulated gene.txt", 
+            quote = F,
+            sep = "\t",
+            row.names = F,
+            col.names = T
+)
+
 plotCounts(dds, gene = "ENSG00000137693.14" , intgroup=c("Sample"))
 
-#GO analysis
-library(goseq)
-library(TxDb.Hsapiens.UCSC.hg38.knownGene)
-library(TxDb.Hsapiens.UCSC.hg38.refGene)
-
-#
-
-rowsum.threshold <- 1 # user chosen
-fdr.threshold <- 0.05 # user chosen
-rs <- rowSums(counts(dds))
-dds <- dds[ rs > rowsum.threshold ,]
-dds <- DESeq(dds)
-res <- results(dds, independentFiltering=FALSE) # use count threshold instead of IF
-assayed.genes <- res$enstrans
-de.genes <- res$enstrans[ which(res$padj < fdr.threshold) ]
-
-gene.vector=as.integer(assayed.genes%in%de.genes)
-names(gene.vector)=assayed.genes
-head(gene.vector)
-
-#Get gene lengths
-pwf=nullp(gene.vector,"hg38","ensGene")
-head(pwf)
-plotPWF(pwf)
-
-#Wallenius approximation
-GO.wall=goseq(pwf,"hg38","ensGene")
-head(GO.wall)
-
-enriched.GO=GO.wall$category[p.adjust(GO.wall$over_represented_pvalue, method="BH")<.05]
-head(enriched.GO)
-
-#KEGG
-# Get the mapping from ENSEMBL 2 Entrez
-en2eg=as.list(org.Hs.egENSEMBL2EG)
-# Get the mapping from Entrez 2 KEGG
-eg2kegg=as.list(org.Hs.egPATH)
-# Define a function which gets all unique KEGG IDs
-# associated with a set of Entrez IDs
-grepKEGG=function(id,mapkeys){unique(unlist(mapkeys[id],use.names=FALSE))}
-# Apply this function to every entry in the mapping from
-# ENSEMBL 2 Entrez to combine the two maps
-kegg=lapply(en2eg,grepKEGG,eg2kegg)
-head(kegg)
-KEGG=goseq(pwf,gene2cat=kegg)
-
-#Using fgsea
-library(fgsea)
-
+#Gene set enrichment analysis using fgsea package
+library("fgsea")
+library("tidyverse")
+res$row <- rownames(res)
 res$symbol <- mapIds(org.Hs.eg.db,
                      keys=ens.str,
                      column="SYMBOL",
@@ -348,7 +319,7 @@ ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
 #Check gene expression of ChromHMM transition states
 #Import data
 
-setwd("E:/snCUT_RUN/results/ChromHMM")
+setwd("D:/snCUT_RUN/results/ChromHMM")
 
 #H3K4me3 gaining H3K27ac
 primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E2_regions_nearest_gene.bed", header = F)
@@ -462,10 +433,10 @@ write.table(x = trans_change,
 
 trans <- split(trans_change, factor(trans_change$transition))
 
-trans2 <- rbind(trans[[1]], trans[[4]], trans[[5]])
-trans2$transition <- factor(trans2$transition, levels = c("E1_E2", "E4_E3", "E3_E4"))
+trans2 <- rbind(trans[[1]], trans[[2]], trans[[3]])
+trans2$transition <- factor(trans2$transition, levels = c("E1_E2", "E1_E3", "E1_E4"))
 
-my_comparisons <- list( c("E1_E2", "E4_E3"), c("E4_E3", "E3_E4"), c("E1_E2", "E3_E4"))
+my_comparisons <- list( c("E1_E2", "E1_E3"), c("E1_E3", "E1_E4"), c("E1_E2", "E1_E4"))
 ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
   geom_boxplot(width = 0.8) +
   ylim(c(-16,22)) +
@@ -473,7 +444,7 @@ ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transit
   ylab("Log2(Fold Change)") +
   xlab("") +
   scale_fill_manual(values = c("#9BBEDB", "#A6D7A4", "#CBA6D1")) +
-  scale_x_discrete(breaks = c("E1_E2", "E4_E3", "E3_E4"), labels = c("E1 > E2", "E4 > E3", "E3 > E4")) +
+  scale_x_discrete(breaks = c("E1_E2", "E1_E3", "E1_E4"), labels = c("E1 > E2", "E1 > E3", "E1 > E4")) +
   stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(13,16,19), label = "p.signif") +
   theme(legend.position = "none",
         axis.title = element_text(size = 22),
