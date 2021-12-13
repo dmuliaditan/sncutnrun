@@ -321,171 +321,41 @@ ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
 
 setwd("D:/snCUT_RUN/results/ChromHMM")
 
-#H3K4me3 gaining H3K27ac
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E2_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E1_E2 <- data.frame(transition="E1_E2", log2FoldChange=res_subset$log2FoldChange)
+transitions <- c("E1_E1", "E1_E2", "E1_E3", "E1_E4", "E1_E5", 
+                "E2_E1", "E2_E2", "E2_E3", "E2_E4", "E2_E5",
+                "E3_E1", "E3_E2", "E3_E3", "E3_E4", "E3_E5",
+                "E4_E1", "E4_E2", "E4_E3", "E4_E5",
+                "E5_E1", "E5_E2", "E5_E3", "E5_E4", "E5_E5")
 
-#H3K4me3 losing H3K4me3 but gaining H3K27ac
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E3_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E1_E3 <- data.frame(transition="E1_E3", log2FoldChange=res_subset$log2FoldChange)
+trans_change <- NULL
+for (k in transitions){
+  print(paste(k))
+  primet_nearest_genes <- read.table(file = paste0("HN137Pri_HN137Met_",k,"_regions_nearest_gene.bed"), header = F)
+  head(primet_nearest_genes)
+  length(unique(primet_nearest_genes$V8))
+  genes <- unique(primet_nearest_genes$V8)
+  gene_index <- which(genes %in% resOrdered$symbol)
+  length(gene_index)
+  genes <- genes[gene_index]
+  rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
+  length(rnaseq_gene_index)
+  res_subset <- resOrdered[rnaseq_gene_index,]
+  summary(res_subset$log2FoldChange)
+  change <- data.frame(transition=k, log2FoldChange=res_subset$log2FoldChange)
+  trans_change <- rbind(trans_change, change)
+  
+}
 
-#H3K4me3 becoming unmodifed
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E1_E4_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E1_E4 <- data.frame(transition="E1_E4", log2FoldChange=res_subset$log2FoldChange)
-
-#H3K4me3 + H3K27ac losing H3K27ac
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E1_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E2_E1 <- data.frame(transition="E2_E1", log2FoldChange=res_subset$log2FoldChange)
-
-#H3K4me3 + H3K27ac losing H3K4me3
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E3_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E2_E3 <- data.frame(transition="E2_E3", log2FoldChange=res_subset$log2FoldChange)
-
-#H3K4me3 + H3K27ac losing both markers
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E2_E4_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E2_E4 <- data.frame(transition="E2_E4", log2FoldChange=res_subset$log2FoldChange)
-
-#Umodified gaining H3K4me3 + H3K27ac
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E2_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E4_E2 <- data.frame(transition="E4_E2", log2FoldChange=res_subset$log2FoldChange)
-
-#Unmodified gaining H3K27ac
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E3_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E4_E3 <- data.frame(transition="E4_E3", log2FoldChange=res_subset$log2FoldChange)
-
-#H3K27ac becoming unmodified
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E3_E4_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E3_E4 <- data.frame(transition="E3_E4", log2FoldChange=res_subset$log2FoldChange)
-
-#Unmodified gaining H3K27me3
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E4_E5_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E4_E5 <- data.frame(transition="E4_E5", log2FoldChange=res_subset$log2FoldChange)
-
-#H3K27me becoming unmodified
-primet_nearest_genes <- read.table(file = "HN137Pri_HN137Met_E5_E4_regions_nearest_gene.bed", header = F)
-head(primet_nearest_genes)
-length(unique(primet_nearest_genes$V8))
-genes <- unique(primet_nearest_genes$V8)
-gene_index <- which(genes %in% resOrdered$symbol)
-length(gene_index)
-genes <- genes[gene_index]
-rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-length(rnaseq_gene_index)
-res_subset <- resOrdered[rnaseq_gene_index,]
-summary(res_subset$log2FoldChange)
-E5_E4 <- data.frame(transition="E5_E4", log2FoldChange=res_subset$log2FoldChange)
-
-#Combine data
-trans_change <- rbind(E1_E2, E1_E3, E1_E4, E2_E1, E2_E3, E2_E4, E4_E2, E4_E3, E3_E4, E4_E5, E5_E4)
 ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
-       geom_boxplot(width = 0.8) +
+      geom_boxplot(width = 0.8) +
       ylim(c(-16,15)) +
       theme_bw() +
       ylab("Log2(Fold Change)") +
       xlab("") +
         theme(legend.position = "none",
         axis.title = element_text(size = 22),
-        axis.text = element_text(size = 20))
+        axis.text.y = element_text(size = 20),
+        axis.text.x = element_text(size = 15))
 
 write.table(x = trans_change,
             file = "gene_expression_transitions.txt",
