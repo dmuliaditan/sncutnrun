@@ -20,8 +20,8 @@ coldata$Patient <- factor(coldata$Patient)
 coldata$names <- coldata$Library
 coldata$files <- file.path(dir, coldata$names, "quant.sf")
 
-coldata <- coldata[coldata$Patient == "HN137",]
-coldata$Sample <- factor(coldata$Sample, levels = c("HN137Pri", "HN137Met", "HN137PCR"))
+coldata <- coldata[coldata$Patient == "HN120",]
+coldata$Sample <- factor(coldata$Sample, levels = c("HN120Pri", "HN120Met", "HN120PCR"))
 
 file.exists(coldata$files)
 
