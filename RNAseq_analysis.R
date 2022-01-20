@@ -346,7 +346,7 @@ for (k in transitions){
   
 }
 
-ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
+ggplot(trans_change, aes(x=reorder(factor(transition),-log2FoldChange,FUN=median), y=log2FoldChange, fill = factor(transition))) +
       geom_boxplot(width = 0.8) +
       ylim(c(-16,15)) +
       theme_bw() +
@@ -356,6 +356,33 @@ ggplot(trans_change, aes(x=factor(transition), y=log2FoldChange, fill = factor(t
         axis.title = element_text(size = 22),
         axis.text.y = element_text(size = 20),
         axis.text.x = element_text(size = 15))
+
+trans_sum <- trans_change %>% group_by(transition) %>% summarise(median=median(log2FoldChange), mean=mean(log2FoldChange))  %>% print(n=24)
+
+trans_change$expression_group <- 0
+trans_change$expression_group <- ifelse(test = trans_change$transition %in% c("E5_E1", "E5_E3", "E4_E2"),  yes = "Expression +",
+                                        ifelse(test = trans_change$transition %in% c("E2_E5", "E3_E5", "E1_E5", "E5_E5", "E2_E4"), yes = "Expression -"
+                                               , no = "Expression ="))
+trans_change$num_group <- 0
+for (l in seq_along(trans_change$transition)){
+  trans_change$num_group[l]  <-  which(levels(factor(trans_change$transition)) == trans_change$transition[l])
+  }
+
+
+ggplot(trans_change, aes(x=reorder(factor(num_group),-log2FoldChange,FUN=median), y=log2FoldChange, fill = factor(expression_group))) +
+      geom_boxplot(width = 0.8) +
+      ylim(c(-16,15)) +
+      theme_bw() +
+      ylab("Log2(Fold Change)") +
+      xlab("") +
+      scale_fill_manual(values = c("#377EB8","#E4201C","#999999")) +
+        theme(legend.position = "none",
+        axis.title = element_text(size = 22),
+        axis.text.y = element_text(size = 20),
+        axis.text.x = element_text(size = 15))
+
+
+
 
 write.table(x = trans_change,
             file = "gene_expression_transitions.txt",
