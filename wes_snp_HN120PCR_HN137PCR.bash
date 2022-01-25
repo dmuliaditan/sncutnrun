@@ -135,7 +135,7 @@ RGSM="$j"'PRI'
 
 #msg="Run Getpileupsummaries: $cell_line"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 "$JAVA_DIR" -Xms16g -jar "$GATK_DIR" GetPileupSummaries \
--I "$RESULTS_DIR"'/final_bams/'"$j"'PCR_fixed_mate_round2.bam' \
+-I "$RESULTS_DIR"'/final_bams/'"$j"'PRI_RG_added.bam' \
 -O "$RESULTS_DIR"'/SNVs/processing_snvs/'"$j"'PCR_getpileupsummaries.table' \
 -L "$RESULTS_DIR"'/SNVs/WES.preprocessed.interval_list' \
 -V "$REFERENCE_DIR"'/af-only-gnomad.hg38.vcf' \
