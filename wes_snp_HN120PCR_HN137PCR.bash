@@ -100,12 +100,22 @@ msg="Preprocess WES intervals with PreprocessIntervals: $cell_line"; echo "-- $m
 for j in HN120 HN137
 do
 
+#Add read group
+"$JAVA_DIR" -Xms16g -jar "$GATK_DIR" AddOrReplaceReadGroups \
+I="$RESULTS_DIR"'/final_bams/'"$j"'PRI.bam' \
+O="$RESULTS_DIR"'/final_bams/'"$j"'PRI_RG_added.bam' \
+RGID=1 \
+RGLB="$j"'PRI' \
+RGPL=ILLUMINA \
+RGPU=UNIT1 \
+RGSM="$j"'PRI'
+
 #Call candidate variants with Mutect2
 "$JAVA_DIR" -Xms16g -jar "$GATK_DIR" Mutect2 \
 -I "$RESULTS_DIR"'/final_bams/'"$j"'PCR.bam' \
--I "$RESULTS_DIR"'/final_bams/'"$j"'PRI.bam' \
--tumor "HN120PCR" \
--normal "HN120PRI" \
+-I "$RESULTS_DIR"'/final_bams/'"$j"'PRI_RG_added.bam' \
+-tumor "$j"'PCR' \
+-normal "$j"'PRI' \
 -O "$RESULTS_DIR"'/SNVs/processing_snvs/'"$j"'PCR_unfiltered.vcf.gz' \
 -R "$FASTA" \
 -L "$RESULTS_DIR"'/SNVs/WES.preprocessed.interval_list' \
