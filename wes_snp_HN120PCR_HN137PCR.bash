@@ -110,6 +110,8 @@ RGPL=ILLUMINA \
 RGPU=UNIT1 \
 RGSM="$j"'PRI'
 
+"$SAMTOOLS" index "$RESULTS_DIR"'/final_bams/'"$j"'PRI_RG_added.bam' -@ 13
+
 #Call candidate variants with Mutect2
 "$JAVA_DIR" -Xms16g -jar "$GATK_DIR" Mutect2 \
 -I "$RESULTS_DIR"'/final_bams/'"$j"'PCR.bam' \
