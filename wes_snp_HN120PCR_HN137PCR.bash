@@ -138,7 +138,7 @@ do
 -O "$RESULTS_DIR"'/SNVs/processing_snvs/'"$j"'PCR_getpileupsummaries.table' \
 -L "$RESULTS_DIR"'/SNVs/WES.preprocessed.interval_list' \
 -V "$REFERENCE_DIR"'/af-only-gnomad.hg38.vcf' \
--R "$FASTA" \
+-R "$FASTA" -DF WellformedReadFilter \
 --tmp-dir "$TMP_DIR"
 
 #msg="Estimate contamination with CalculateContamination: $cell_line"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
