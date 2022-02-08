@@ -368,18 +368,25 @@ for (l in seq_along(trans_change$transition)){
   trans_change$num_group[l]  <-  which(levels(factor(trans_change$transition)) == trans_change$transition[l])
   }
 
+library(ggnewscale)
+library(RColorBrewer)
+library(magrittr)
 
+mypal <- colorRampPalette(brewer.pal( 6 , "Dark2" ))
 ggplot(trans_change, aes(x=reorder(factor(num_group),-log2FoldChange,FUN=median), y=log2FoldChange, fill = factor(expression_group))) +
-      geom_boxplot(width = 0.8) +
-      ylim(c(-16,15)) +
-      theme_bw() +
-      ylab("Log2(Fold Change)") +
-      xlab("") +
-      scale_fill_manual(values = c("#377EB8","#E4201C","#999999")) +
-        theme(legend.position = "none",
+  geom_boxplot(width = 0.8) +
+  scale_fill_manual(values = c("#377EB8","#E4201C","#999999")) +
+  new_scale_fill() +
+  geom_tile(data=trans_change, aes(x=factor(num_group), y=-18.5,fill=transition)) +
+  scale_fill_manual(values = mypal(24)) +
+  ylim(c(-19,15)) +
+  theme_bw() +
+  ylab("Log2(Fold Change)") +
+  xlab("HN137Pri > HN137 Met chromatin state transitions") +
+  theme(legend.position = "none",
         axis.title = element_text(size = 22),
         axis.text.y = element_text(size = 20),
-        axis.text.x = element_text(size = 15))
+        axis.text.x = element_blank())
 
 
 
