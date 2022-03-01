@@ -19,17 +19,17 @@ do
 #-d /home/daniel/snCUT_RUN/wes/CNV/cnvkit '/home/daniel/snCUT_RUN/wes/results_dir/final_bams/'"$j"'.bam' --scatter --diagram
 
 #Make 50kb windows
-awk '{ print $1, $2, $3, $6}' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'.call.cns' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed'
-tail -n+2 '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
-perl -p -i -e 's/ /\t/g' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
-bedtools makewindows -b '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed' -i src -w 50000 > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN_50kb_binned.bed'
+#awk '{ print $1, $2, $3, $6}' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'.call.cns' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed'
+#tail -n+2 '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
+#perl -p -i -e 's/ /\t/g' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
+bedtools makewindows -b '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed' -i src -w 2500 > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN_2_5kb_binned.bed'
 
 done 
 
 #Intersect all the interval files
-bedtools multiinter -i HN120PRI_subsampled_sorted_CN_50kb_binned.bed HN120MET_subsampled_sorted_CN_50kb_binned.bed HN120PCR_subsampled_sorted_CN_50kb_binned.bed \
-HN137PRI_subsampled_sorted_CN_50kb_binned.bed HN137MET_CN_50kb_binned.bed HN137PCR_subsampled_sorted_CN_50kb_binned.bed \
--names HN120PRI HN120MET HN120PCR HN137PRI HN137MET HN137PCR > HN120_HN137_CNVKIT_merged.bed
+bedtools multiinter -i HN120PRI_subsampled_sorted_CN_2_5kb_binned.bed HN120MET_subsampled_sorted_CN_2_5kb_binned.bed HN120PCR_subsampled_sorted_CN_2_5kb_binned.bed \
+HN137PRI_subsampled_sorted_CN_2_5kb_binned.bed HN137MET_CN_2_5kb_binned.bed HN137PCR_subsampled_sorted_CN_2_5kb_binned.bed \
+-names HN120PRI HN120MET HN120PCR HN137PRI HN137MET HN137PCR > HN120_HN137_CNVKIT_merged_2_5kb.bed
 
 #In R
 
