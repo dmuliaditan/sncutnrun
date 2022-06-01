@@ -6,6 +6,7 @@ load(file = "25052022_RNAseq_Zscore_CNV_correlation.RData")
 
 library(ggpubr)
 library(stringr)
+library(ggplot2)
 
 #Extract chromatin state data from ChromHMM results
 #HN137Pri --> HN137Met transition data was used to extract HN137Met annotation states
