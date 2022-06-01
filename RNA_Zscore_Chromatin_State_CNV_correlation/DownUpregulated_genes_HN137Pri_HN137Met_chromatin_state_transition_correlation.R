@@ -4,6 +4,8 @@
 setwd("D:/snCUT_RUN/scripts")
 load(file = "01062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
 
+library(ggplot2)
+
 #Define genes gaining or losing H3K4me3 and H3K27ac
 gain_k4me3 <- data.frame(GENE=rbind(epistate[[11]], epistate[[12]],epistate[[16]],epistate[[20]]), STATE="+H3K4me3")
 gain_k27ac <- data.frame(GENE=rbind(epistate[[2]], epistate[[3]],epistate[[18]],epistate[[22]]), STATE="+H3K27ac")
