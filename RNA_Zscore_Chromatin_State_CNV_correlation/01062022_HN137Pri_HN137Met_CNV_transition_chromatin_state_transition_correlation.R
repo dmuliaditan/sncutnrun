@@ -5,6 +5,7 @@ setwd("D:/snCUT_RUN/scripts")
 load(file = "01062022_DownUpregulated_genes_HN137Pri_HN137Met_chromatin_state_transition_correlation.RData")
 
 library(ggplot2)
+library(stringr)
 
 #Load HN137Pri and HN137Met CNV data
 cnv_pri <- read.table("D:/snCUT_RUN/wes/CNV/cnvkit/HN137PRI_subsampled_sorted.call.cns", header = T)
