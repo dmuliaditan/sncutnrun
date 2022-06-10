@@ -1,4 +1,9 @@
-##### HN137Pri, HN137Met State transition analysis, look at copy number affected regions
+#6. HN137Pri, HN137Met State transition analysis, look at copy number affected regions
+
+#Version: 10/06/2022
+#Author: Daniel Muliaditan
+
+#Here, we look at genes with a change in CN and investigate what are the accompanying chromatin state changes in these genes
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
