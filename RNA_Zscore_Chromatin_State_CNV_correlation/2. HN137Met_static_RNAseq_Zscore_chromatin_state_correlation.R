@@ -1,4 +1,10 @@
-#Static Chromatin State-RNAseq-Zscore correlation in the HN137Met cell line
+#2. Static Chromatin State-RNAseq-Zscore correlation in the HN137Met cell line
+
+#Version: 10/06/2022
+#Author: Daniel Muliaditan
+
+#After correlating gene expression and copy number, now correlate gene expression and chromatin state,
+#more specifically in the presence and absence of activating marks
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
@@ -253,6 +259,7 @@ my_comparisons <- list( c("H3K4me3+/H3K27ac+", "H3K4me3-/H3K27ac+"),
                         c("H3K4me3+/H3K27ac+", "H3K4me3-/H3K27ac-"),
                         c("H3K4me3+/H3K27ac-", "H3K4me3-/H3K27ac-"))
 
+#Plot the image
 ggplot2::ggplot(data = rna_epi, aes(x=STATE, y=RNAseq_Zscore, fill = str_wrap(STATE,20))) +
   geom_boxplot() +
   theme_bw() +
