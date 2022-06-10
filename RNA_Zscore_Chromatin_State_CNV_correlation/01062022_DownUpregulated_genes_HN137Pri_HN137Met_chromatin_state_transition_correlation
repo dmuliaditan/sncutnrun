@@ -4,7 +4,9 @@
 setwd("D:/snCUT_RUN/scripts")
 load(file = "01062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
 
+library(dplyr)
 library(ggplot2)
+library(stringr)
 
 #Define genes gaining or losing H3K4me3 and H3K27ac
 gain_k4me3 <- data.frame(GENE=rbind(epistate[[11]], epistate[[12]],epistate[[16]],epistate[[20]]), STATE="+H3K4me3")
@@ -455,5 +457,113 @@ ggplot(data = met_rna_epi, mapping = aes(x = EPISTATE, y= ..count../sum(..count.
         axis.text.x = element_text(angle = 45, vjust = 0.95, hjust = 0.95, size = 18),
         axis.title.x = element_text(size = 24),
         axis.title.y = element_text(size = 24, margin = margin(t = 0, r = 15, b = 0, l = 0)))
+
+#Look at fold change instead of plotting the bargraph
+#Read in RNA-seq Top Differentially Regulated genes between HN137Pri and HN137Met
+met_rna <- read.table("D:/snCUT_RUN/results/rnaseq/HN137Met_vs_HN137Pri_top_differentially regulated gene.txt", header = T)
+head(met_rna)
+
+#Reorder chromatin transition data so it matches the RNAseq gene order
+met_rna_epi2 <- met_rna[which(met_rna$symbol %in% genechrom$GENE),]
+reorder_index <- match(x = met_rna_epi2$symbol,table = genechrom$GENE)
+chromstate_genes2 <- genechrom[reorder_index,]
+head(met_rna_epi2)
+head(chromstate_genes2)
+
+#Add the chromstate data to the RNA-seq Z-score data
+met_rna_epi2$EPISTATE <- factor(chromstate_genes2$STATE, levels = c("+H3K4me3", "+H3K27ac", "+H3K4me3/+H3K27ac", 
+                                                                    "-H3K4me3", "-H3K27ac", "-H3K4me3/-H3K27ac",
+                                                                    "No chromatin state change", "Ambiguous"))
+#Drop genes with ambiguous chromatin states
+met_rna_epi2 <- met_rna_epi2[-which(met_rna_epi2$EPISTATE == "Ambiguous"),]
+met_rna_epi2 <- droplevels.data.frame(met_rna_epi2)
+#Total number of genes with chromatin annotation: 10482
+
+#Subset only the top differentially expressed genes
+met_rna_signif <- met_rna[which(met_rna$padj < 0.001),] 
+met_rna_signif <- met_rna_signif[which(met_rna_signif$log2FoldChange > 1 | met_rna_signif$log2FoldChange < -0.5),]
+met_rna_signif <- met_rna_signif[which(is.na(met_rna_signif$symbol) == F),]
+met_rna_signif <- met_rna_signif[which(duplicated(met_rna_signif$symbol) == F),]
+
+#Reorder chromatin transition data so it matches the RNAseq gene order
+rna_epi_signif <- met_rna_signif[which(met_rna_signif$symbol %in% genechrom$GENE),]
+reorder_index <- match(x = rna_epi_signif$symbol,table = genechrom$GENE)
+chromstate_genes2 <- genechrom[reorder_index,]
+head(rna_epi_signif)
+head(chromstate_genes2)
+
+#Add the chromstate data to the RNA-seq Z-score data
+rna_epi_signif$EPISTATE <- factor(chromstate_genes2$STATE, levels = c("+H3K4me3", "+H3K27ac", "+H3K4me3/+H3K27ac", 
+                                                                    "-H3K4me3", "-H3K27ac", "-H3K4me3/-H3K27ac",
+                                                                    "No chromatin state change", "Ambiguous"))
+#Categorize down- and upregulated genes
+rna_epi_signif$group <- 0
+rna_epi_signif$group <- ifelse(rna_epi_signif$log2FoldChange > 1, yes = "Upregulated", no = "Downregulated")
+rna_epi_signif$group <- factor(rna_epi_signif$group)
+table(rna_epi_signif$EPISTATE)
+table(rna_epi_signif$group)
+
+#Drop genes with ambiguous chromatin states
+rna_epi_signif <- rna_epi_signif[-which(rna_epi_signif$EPISTATE == "Ambiguous"),]
+rna_epi_signif <- droplevels.data.frame(rna_epi_signif)
+#Total significant genes with chromatin annotation: 2802
+
+#Calculate mean log2FoldChange across all genes that are not down- or upregulated
+signif_index <- which(met_rna_epi2$symbol %in% rna_epi_signif$symbol)
+met_rna_epi3 <- met_rna_epi2[-signif_index,] #Remove all significantly down- or upregulated genes for comparison
+head(met_rna_epi3)
+
+#Calculate mean log2FC per group for the non-significant genes
+nonsignif <- met_rna_epi3 %>%
+  group_by(EPISTATE) %>%
+  summarise(mean = mean(log2FoldChange), n= n()) %>%
+  as.data.frame()
+
+signif <- rna_epi_signif %>%
+  group_split(group)
+downregulated <- as.data.frame(signif[[1]])
+upregulated <- as.data.frame(signif[[2]])
+
+#There are 1802 downregulated genes and 1000 upregulated genes. To make an equal comparison, 
+#a random 1000 downregulated genes will be selected for the enrichment comparison
+
+set.seed(1234)
+downregulated <- downregulated[sample(nrow(downregulated), 1000), ]  
+downregulated <- downregulated %>%
+  group_by(EPISTATE) %>%
+  summarise(mean=mean(log2FoldChange), n=n()) %>%
+  as.data.frame()
+
+upregulated <- upregulated %>%
+  group_by(EPISTATE) %>%
+  summarise(mean=mean(log2FoldChange), n=n()) %>%
+  as.data.frame()
+
+#Combine all the data into one data frame
+grouping <- data.frame(EPISTATE=nonsignif$EPISTATE,
+                       nonsignif=nonsignif$n,
+                       downregulated=downregulated$n,
+                       upregulated=upregulated$n)
+
+#Calculate enrichment of down- and upregulated genes per chromatin state change
+grouping$downregulated_prop <- log2(grouping$downregulated / grouping$nonsignif)
+grouping$upregulated_prop <- log2(grouping$upregulated / grouping$nonsignif )
+grouping$diff <- grouping$upregulated_prop - grouping$downregulated_prop
+grouping
+
+#Plot the horizontal barplot
+ggplot(data = grouping, aes(x=diff, y= EPISTATE, fill = str_wrap(EPISTATE,20))) +
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  ylab("") +
+  xlab("Log2(Proportion upregulated genes / downregulated genes)") +
+  coord_cartesian(xlim = c(-5,5)) +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size = 18),
+        legend.key.height=unit(1.48, "cm"),
+        axis.text.y = element_text(size = 20),
+        axis.text.x = element_text(size = 20),
+        axis.title.x = element_text(size = 20, margin = margin(t = 20, r = 0, b = 0, l = 0)))
+
 
 save.image(file = "01062022_DownUpregulated_genes_HN137Pri_HN137Met_chromatin_state_transition_correlation.RData")
