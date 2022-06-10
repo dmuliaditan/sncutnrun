@@ -1,4 +1,11 @@
-#Static CNV-RNAseq-Zscore correlation in the HN137Met cell line
+#This series of code describes the analysis to correlate gene expression, gene copy number and gene chromatin state
+#Previously gene expression data was retrieved using RNAseq analysis (see section on RNAseq analysis)
+#CNV data was retrieved with CNVkit (see section on CNV calling)
+#Chromatin state data was achieved with ChromHMM (see section on ChromHMM)
+
+#1. This section describes the static CNV-RNAseq-Zscore correlation in the HN137Met cell line
+#Version 10/06/2022
+#Daniel Muliaditan
 
 #First, set some colourblind palettes for plotting and set the working directory
 setwd("D:/snCUT_RUN/scripts")
