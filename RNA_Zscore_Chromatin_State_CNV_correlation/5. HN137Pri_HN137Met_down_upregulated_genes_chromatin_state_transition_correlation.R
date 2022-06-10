@@ -1,4 +1,10 @@
-##### HN137Pri, HN137Met State transition analysis
+#4. Stratifying down- and upregulated genes in the HN137Pri > HN137Met transition by chromatin state
+
+#Version: 10/06/2022
+#Author: Daniel Muliaditan
+
+#After static correlation, now we look at the transition between HN137Pri and HN137Met. 
+#What chromatin state changes are associated with differential gene expression in the transition between HN137Pri and HN137Met?
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
@@ -395,7 +401,7 @@ for (j in unique(chromstate$GENE)) {
 
 table(genechrom$STATE)
 
-#Plot chromatin state - RNA-expression transition correlation
+#Plot chromatin state - gene-expression transition correlation
 #Read in RNA-seq Top Differentially Regulated genes between HN137Pri and HN137Met
 met_rna <- read.table("D:/snCUT_RUN/results/rnaseq/HN137Met_vs_HN137Pri_top_differentially regulated gene.txt", header = T)
 head(met_rna)
@@ -458,7 +464,7 @@ ggplot(data = met_rna_epi, mapping = aes(x = EPISTATE, y= ..count../sum(..count.
         axis.title.x = element_text(size = 24),
         axis.title.y = element_text(size = 24, margin = margin(t = 0, r = 15, b = 0, l = 0)))
 
-#Look at fold change instead of plotting the bargraph
+#Look at proportion between upregulated and downregulated genes with a horizontal bargraph
 #Read in RNA-seq Top Differentially Regulated genes between HN137Pri and HN137Met
 met_rna <- read.table("D:/snCUT_RUN/results/rnaseq/HN137Met_vs_HN137Pri_top_differentially regulated gene.txt", header = T)
 head(met_rna)
