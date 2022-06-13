@@ -27,7 +27,7 @@ set.seed(1234)
 
 #Set the working directory and load the dataset
 setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
-HN <- readRDS(paste0(histone,"_postclustering.RData")) 
+load(paste0(histone,"_postclustering.RData")) 
 
 #Call peaks with MACS2
 peaks <- CallPeaks(
