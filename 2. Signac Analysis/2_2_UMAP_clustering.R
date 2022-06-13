@@ -1,6 +1,9 @@
 #In this section, we will subset the dataset by filtering low quality cells, cluster the cells by performing dimensional reduction with UMAP
 #and look at batch effects and QC measures per cell
 
+#Version: 13/06/2022
+#Author: Daniel Muliaditan
+
 #Load necessary packages and set seed
 library(ggplot2)
 library(Signac)
