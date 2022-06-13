@@ -1,7 +1,7 @@
 # Single nucleus CUT&RUN to assess epigenetic heterogeneity in head and neck cancer progression
-Repository for all code used in the snCUT&amp;RUN project
+Repository for all the code used in the snCUT&amp;RUN project
 
-Daniel Muliaditan, 13 June 2021
+Daniel Muliaditan, 13 June 2022
 
 This repository contains the following:
 - Bash scripts used to preprocess raw single-cell fastq files
