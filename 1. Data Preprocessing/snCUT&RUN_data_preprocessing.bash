@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 
+#Set variables and directories
 longLine="--------------------"
-
 SAMTOOLS='samtools'
-GATK_DIR='/mnt/e/programmes/gatk-4.1.4.1/gatk-package-4.1.4.1-local.jar'
+GATK_DIR='/mnt/d/programmes/gatk-4.1.4.1/gatk-package-4.1.4.1-local.jar'
 JAVA_DIR='java'
-REFERENCE_DIR='/mnt/e/genome_references/hg38_reference'
+REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
 BOWTIE="bowtie2"
-BOWTIE_INDEX='/mnt/e/genome_references/bowtie2_indexes/hg38'
+BOWTIE_INDEX='/mnt/d/genome_references/bowtie2_indexes/hg38'
 BEDTOOLS='bedtools'
 MACS2='macs2'
-SCRIPT_DIR='/mnt/e/snCUT_RUN/scripts'
-SEQUENCE_DIR='/mnt/e/snCUT_RUN/sequence_runs'
-AGGR_RESULTS_DIR='/mnt/e/snCUT_RUN/data'
+SCRIPT_DIR='/mnt/d/snCUT_RUN/scripts'
+SEQUENCE_DIR='/mnt/d/snCUT_RUN/sequence_runs'
+AGGR_RESULTS_DIR='/mnt/d/snCUT_RUN/data'
+THREADS=8
 
 mkdir -p "$AGGR_RESULTS_DIR"'/tmp_dir'
 TMP_DIR="$AGGR_RESULTS_DIR"'/tmp_dir'
-THREADS=8
 
 mkdir -p "$AGGR_RESULTS_DIR"'/bamlists'
 mkdir -p "$AGGR_RESULTS_DIR"'/aggregate_bams'
@@ -24,17 +24,26 @@ mkdir -p "$AGGR_RESULTS_DIR"'/macs2'
 mkdir -p "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs'
 mkdir -p "$AGGR_RESULTS_DIR"'/signac_fragments'
 
-for p in 120met_k27ac
+for p in 120pri_K4me3 120pri_k27ac etc
 do
+
+#Set sample metadata
+#Each *_experiment.txt file has two columns with the following outline
+#Experiment_date  Experiment_name e.g.
+#DM_20200909_1  HN120Met_K4me3
+#DM_20201007  HN120Met_K4me3
 
 table="$SCRIPT_DIR"'/'"$p"'_experiment.txt'
 dos2unix "$table"
 
 mkdir -p "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp'
+
+#Create list of bam files
 touch "$AGGR_RESULTS_DIR"'/bamlists/'"$p"'_bamslist.txt'
 touch "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_precount.txt'
 echo "$p" > "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_experiment.txt'
 
+#For each cell line - antibody combination, loop through each experiment/batch
 cut -f1 "$table" |
 while read k; do
 
@@ -52,14 +61,9 @@ while read k; do
   msg="Experiment: $exp"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   msg="Date: $k"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 
-
   msg="Set up directories and filenames"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-
-
   fastqdir="$SEQUENCE_DIR"'/'"$k"'/fastqdir'
   results_dir="$SEQUENCE_DIR"'/'"$k"'/results_dir'
-
-
   mkdir -p "$results_dir"'/processed_bams'
   mkdir -p "$results_dir"'/processed_bams/sam'
   mkdir -p "$results_dir"'/processed_bams/bam'
@@ -131,7 +135,7 @@ while read k; do
 
   done
 
-  msg="Aggregate individual cells to pseudobulk bam"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+  msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   ls -d "$SEQUENCE_DIR"'/'"$k"'/results_dir/final_bams/'*'_.bam' > \
   "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist.txt'
   cat "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist.txt' >> \
@@ -145,12 +149,12 @@ while read k; do
 
 done
 
-  msg="Merge all bams, sort and index"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+  msg="Merge all .bams to form pseudobulk, sort and index"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   "$SAMTOOLS" merge -f -b "$AGGR_RESULTS_DIR"'/bamlists/'"$p"'_bamslist.txt' "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_unsort.bam' --threads "$THREADS"
   "$SAMTOOLS" sort "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_unsort.bam' > "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_sorted.bam'
   "$SAMTOOLS" index "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_sorted.bam'
 
-  msg="Convert aggregated bam to bedgraph and bed"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+  msg="Convert aggregated .bam to .bedgraph and .bed"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   "$SAMTOOLS" sort -n -o "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_namesorted.bam' -@ "$THREADS" "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_sorted.bam'
   "$BEDTOOLS" bamtobed -i "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_namesorted.bam' -bedpe \
   | awk '{if($2!="-1") print}' | sort -k1,1 -k2,2n | cut -f1,2,6,7 > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_preproc.bed'
@@ -330,3 +334,7 @@ cat "$results_dir"'/final_fragments/120pri_k27ac/120pri_k27ac_barcodes.txt' "$re
 "$results_dir"'/final_fragments/120pcr_k27ac/120pcr_k27ac_barcodes.txt' "$results_dir"'/final_fragments/137pcr_k27ac/137pcr_k27ac_barcodes.txt' \
 "$results_dir"'/final_fragments/137pri_k27ac/137pri_k27ac_barcodes.txt' "$results_dir"'/final_fragments/137met_k27ac/137met_k27ac_barcodes.txt' \
 > "$results_dir"'/final_fragments/K27ac_barcodes.txt'
+
+#At the end of the pipeline, the resulting outputs are:
+#1. Fragment files to be used as Signac input file
+#2. Barcode files to be used as metadata for Signac analysis
