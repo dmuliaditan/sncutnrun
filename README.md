@@ -28,7 +28,7 @@ Table of Content:
  	3.5. Analysis of up- and downregulated genes between a primary and metastatic tumour, tratifying genes by chromatin state change<br/>
   	3.6. Analyzing chromatin state changes in genes affected by a change in gene CN
 
-4. Epigenetic Heterogeneity Driven HNSC Progression
+4. Epigenetic Heterogeneity Driven HNSC Progression<br/>
 	4.1. Module Score and HN120preMET/HN137prePCR analysis
 
 For questions, please write an e-mail to: Daniel_Muliaditan@gis.a-star.edu.sg
