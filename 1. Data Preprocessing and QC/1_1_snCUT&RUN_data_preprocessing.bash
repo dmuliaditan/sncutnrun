@@ -108,7 +108,7 @@ while read k; do
   "$SAMTOOLS" sort -n -o "$results_dir"'/final_bams/'"$i"'namesorted.bam' -@ 8 "$results_dir"'/final_bams/'"$i"'.bam'
   "$BEDTOOLS" bamtobed -i "$results_dir"'/final_bams/'"$i"'namesorted.bam' -bedpe \
   | awk '{if($2!="-1") print}' | sort -k1,1 -k2,2n | cut -f1,2,6,7 > "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed'
-  cat "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV | grep -v chrX | grep -v chrY \
+  cat "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV \
   > "$results_dir"'/beds_and_bedgraphs/'"$i"'presort.bed'
   "$BEDTOOLS" sort -i "$results_dir"'/beds_and_bedgraphs/'"$i"'presort.bed' \
   -faidx "$REFERENCE_DIR"'/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta.fai' > \
@@ -158,7 +158,7 @@ done
   "$SAMTOOLS" sort -n -o "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_namesorted.bam' -@ "$THREADS" "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_sorted.bam'
   "$BEDTOOLS" bamtobed -i "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_namesorted.bam' -bedpe \
   | awk '{if($2!="-1") print}' | sort -k1,1 -k2,2n | cut -f1,2,6,7 > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_preproc.bed'
-  cat "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV | grep -v chrX | grep -v chrY \
+  cat "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV \
   > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_presort.bed'
   "$BEDTOOLS" sort -i "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/'"$p"'_presort.bed' \
   -faidx "$REFERENCE_DIR"'/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta.fai' > \
@@ -181,7 +181,7 @@ done
   cat "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_peaks.broadPeak' | awk '{ print $1, $2, $3 }' > \
   "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_peaks.bed'
   sort -k1V -k2,2n "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_peaks.bed' > "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_sorted.bed'
-  cat "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_sorted.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV | grep -v chrX | grep -v chrY > "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_peaks.bed'
+  cat "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_q0_1_sorted.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV > "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_peaks.bed'
   perl -p -i -e 's/ /\t/g' "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_peaks.bed' #Final peak file
 
   #Remove unsorted beds and beds with unknown contigs
@@ -206,7 +206,7 @@ done
     #Convert single-cell bams to beds
     "$BEDTOOLS" bamtobed -i "$o" -bedpe \
     | awk '{if($2!="-1") print}' | sort -k1,1 -k2,2n | cut -f1,2,6,7 > "$TMP_DIR"'/'"$s"'_preproc.bed'
-    cat "$TMP_DIR"'/'"$s"'_preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV | grep -v chrX | grep -v chrY \
+    cat "$TMP_DIR"'/'"$s"'_preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV \
     > "$TMP_DIR"'/'"$s"'_presort.bed'
     "$BEDTOOLS" sort -i "$TMP_DIR"'/'"$s"'_presort.bed' \
     -faidx "$REFERENCE_DIR"'/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta.fai' > \
