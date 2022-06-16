@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+#3.3. Analysis of WES data to call gene CN and call CNVs
+#Version 16/06/2022
+#Daniel Muliaditan
+
+#Required input:
+#-WES analysis ready .bams (GATK best practices pipeline was used for this)
+
+#Required tools: CNVkit, for install see: https://cnvkit.readthedocs.io/en/stable/
+
+#Output: 
+#-CNVkit output with amongst other copy number calls used for this study
