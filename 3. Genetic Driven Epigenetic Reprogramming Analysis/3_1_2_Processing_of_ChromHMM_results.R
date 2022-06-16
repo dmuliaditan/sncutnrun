@@ -1,3 +1,11 @@
+#After running ChromHMM, we need to annotate the 200bp bin output. We first use this script to 
+
+#1. This section describes the static CNV-RNAseq-Zscore correlation in the HN137Met cell line
+#Version 10/06/2022
+#Daniel Muliaditan
+
+#First, set some colourblind palettes for plotting and set the working directory
+
 #Load ChromHMM final .bed files. See section on ChromHMM for the code to make this .bed files
 #It is good to note that the genome has been segmented to 200bp to equalize the bin size across the different samples
 bed1 <- read.table(file = "D:/snCUT_RUN/results/ChromHMM/outputdir/5_states/HN137Pri_5_segments_binned_sorted.bed", header = F)
