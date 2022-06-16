@@ -1,13 +1,15 @@
-#After running ChromHMM, we need to annotate the 200bp bin output. We first use this script to 
-
-#1. This section describes the static CNV-RNAseq-Zscore correlation in the HN137Met cell line
-#Version 10/06/2022
+#3.1.2. This section describes the script used to further process ChromHMM data in R
+#Version 16/06/2022
 #Daniel Muliaditan
 
-#First, set some colourblind palettes for plotting and set the working directory
+#Required input:
+#-ChromHMM output, binned to 200bp segments
 
 #Load ChromHMM final .bed files. See section on ChromHMM for the code to make this .bed files
+#In this case, HN137Pri and HN137Met data shall be combined as we will be looking into the chromatin state transition 
+#between HN137Pri and HN137Met later on.
 #It is good to note that the genome has been segmented to 200bp to equalize the bin size across the different samples
+#Read in .bed files
 bed1 <- read.table(file = "D:/snCUT_RUN/results/ChromHMM/outputdir/5_states/HN137Pri_5_segments_binned_sorted.bed", header = F)
 bed2 <- read.table(file = "D:/snCUT_RUN/results/ChromHMM/outputdir/5_states/HN137Met_5_segments_binned_sorted.bed", header = F)
 
@@ -18,7 +20,6 @@ head(bed1, n = 200)
 head(bed2, n = 200)
 
 #Make the data frames to combine the chromatin state annotation between HN137Pri and HN137Met
-
 #This data frame has the unique bin identifier and chromatin state change
 comparison <- data.frame(bin=paste(bed1$V1,bed1$V2,bed1$V3, sep = "-"),transition = paste0(bed1$V4,"-",bed2$V4))
 table <- table(comparison$transition)
