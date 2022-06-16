@@ -1,6 +1,20 @@
-#RNA-seq analysis with R after salmon quantification
+#3.2. Pipeline to analyze snCUT&RUN bulk RNA-seq data
 #Tutorial RNA-seq workflow: gene-level exploratory analysis and differential expression, Michael I. Love, Simon Anders, Vladislav Kim and Wolfgang Huber, 16 October, 2019
 #https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
+
+#3.2.2. This section describes the script used for downstream RNAseq analysis after transcript quantification with salmon 
+#Version 16/06/2022
+#Daniel Muliaditan
+
+#Required input:
+#-Salmon .quant files
+#-Metadata file describing samples, libraries, type of libraries etc.
+
+#Required tools: R, see packages below
+
+#Output: 
+#-Z-score file with normalised RNAseq count data across the samples
+#-Output from differential expression analysis including pathways etc.
 
 #Set working directory
 setwd("/mnt/raid5/cutnrun/rnaseq")
