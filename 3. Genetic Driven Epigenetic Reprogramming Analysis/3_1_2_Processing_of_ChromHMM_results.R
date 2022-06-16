@@ -39,11 +39,12 @@ head(subseg)
 #13060 bins with the transition H3K4me3+ > H3K4me3+/H3K27ac+
 
 #Now, save all the various transition data per transition type as .bed file, except E4-E4 transition
-transition <- c("E1-E1", "E1-E2", "E1-E3", "E1-E4", "E1-E5",
-                "E2-E1", "E2-E2", "E2-E3", "E2-E4", "E2-E5",
-                "E3-E1", "E3-E2", "E3-E3", "E3-E4", "E3-E5",
-                "E4-E1", "E4-E2", "E4-E3", "E4-E5",
-                "E5-E1", "E5-E2", "E5-E3", "E5-E4", "E5-E5")
+transition <- c("E1_E1", "E1_E2", "E1_E3", "E1_E4", "E1_E5",
+                "E2_E1", "E2_E2", "E2_E3", "E2_E4", "E2_E5",
+                "E3_E1", "E3_E2", "E3_E3", "E3_E4", "E3_E5",
+                "E4_E1", "E4_E2", "E4_E3", "E4_E5",
+                "E5_E1", "E5_E2", "E5_E3", "E5_E4", "E5_E5")
+
 
 for (j in transition) {
   print(j)
