@@ -1,4 +1,4 @@
-#3. Static Chromatin State-CNV-RNAseq-Zscore correlation in the HN137Met cell line
+#3.6 Static Chromatin State-CNV-RNAseq-Zscore correlation in the HN137Met cell line
 
 #Version: 10/06/2022
 #Author: Daniel Muliaditan
