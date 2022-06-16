@@ -4,8 +4,6 @@
 #Tutorial RNA-seq workflow: gene-level exploratory analysis and differential expression, Michael I. Love, Simon Anders, Vladislav Kim and Wolfgang Huber, 16 October, 2019
 #https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
 
-#Dependencies: salmon, tximport, DESeq2
-
 #Prequisities:
 #Install salmon: https://combine-lab.github.io/salmon/getting_started/ using conda
 #Activate conda environment: conda activate salmon
@@ -13,7 +11,6 @@
 #Set working directories and variables
 reference_dir=/mnt/raid5/cutnrun/reference/hg38
 gencode_version=v38
-
 
 #Salmon transcript quantification
 #Index gencode transcripts to use for salmon
