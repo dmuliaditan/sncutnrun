@@ -1,12 +1,25 @@
 #!/usr/bin/bash
 
-#Pipeline to analyze snCUT&RUN bulk RNA-seq data
+#3.2. Pipeline to analyze snCUT&RUN bulk RNA-seq data
 #Tutorial RNA-seq workflow: gene-level exploratory analysis and differential expression, Michael I. Love, Simon Anders, Vladislav Kim and Wolfgang Huber, 16 October, 2019
 #https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
 
+#3.2.1. This section describes the script used to quantify transcripts from raw RNAseq-reads using salmon
+#Version 16/06/2022
+#Daniel Muliaditan
+
+#Required input:
+#-Raw RNAseq input reads
+#-Gencode annotation file (for this script, gencode v38 was used
+
+#Required tools: salmon, for install see: https://combine-lab.github.io/salmon/
 #Prequisities:
 #Install salmon: https://combine-lab.github.io/salmon/getting_started/ using conda
 #Activate conda environment: conda activate salmon
+
+#Output: 
+#-Salmon index file
+#-Salmon .quant files: these are the transcript quantification files used for downstream analysis
 
 #Set working directories and variables
 reference_dir=/mnt/raid5/cutnrun/reference/hg38
