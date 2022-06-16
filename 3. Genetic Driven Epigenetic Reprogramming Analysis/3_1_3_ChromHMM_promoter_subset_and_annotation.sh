@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #3.1.3. This section describes the script used to subset binned data to include only promoter bins and to annotate the bins with the nearest genes
 #Version 16/06/2022
 #Daniel Muliaditan
