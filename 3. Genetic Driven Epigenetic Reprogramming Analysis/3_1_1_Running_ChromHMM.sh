@@ -11,7 +11,7 @@
 #3.7. Alluvial plot detailing the global changes of chromatin state occurring between HN137Pri and HN137Met
 #3.8. Looking at enrichment of chromatin state comparing up- vs. downregulated genes in the HN137Pri > HN137Met transition
 
-#3.1.1. This section describes the script used to run ChromHMM to 
+#3.1.1. This section describes the script used to run ChromHMM to annotate genomic regions with chromatin state.
 #Version 16/06/2022
 #Daniel Muliaditan
 
