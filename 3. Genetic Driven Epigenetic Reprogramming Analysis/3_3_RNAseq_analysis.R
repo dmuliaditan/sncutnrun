@@ -1,44 +1,61 @@
-#RNA-seq analysis with R
+#RNA-seq analysis with R after salmon quantification
 #Tutorial RNA-seq workflow: gene-level exploratory analysis and differential expression, Michael I. Love, Simon Anders, Vladislav Kim and Wolfgang Huber, 16 October, 2019
 #https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
 
-#Import salmon output to R with tximeta
+#Set working directory
 setwd("/mnt/raid5/cutnrun/rnaseq")
+
+#Load required libraries
+library(tximeta)
+library(SummarizedExperiment)
+library(DESeq2)
+library(dplyr)
+library(ggplot2)
+library(pheatmap)
+library(RColorBrewer)
+library(PoiClaClu)
+library(glmpca)
+library(apeglm)
+library(genefilter)
+library(mygene)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(fgsea)
+library(tidyverse)
+
+#Locate salmon output (.quant files)
 dir <- "/mnt/raid5/cutnrun/rnaseq/salmon_output"
 
-list.files(dir)
-
+#Import salmon output to R with tximeta
+list.files(dir) #Check if the data are complete
 list.files(file.path(dir, "quants"))
 
+#Create an appropriate metadata file detailing library and sample names, as well as necessary annotations
 csvfile <- file.path(dir, "sample_meta.csv")
-coldata <- read.csv(csvfile, stringsAsFactors=FALSE, header=T)
+coldata <- read.csv(csvfile, stringsAsFactors=FALSE, header=T) #Import into R
 coldata
 
+#Refactorize data so that the data are of correct type and order
 coldata$Sample <- factor(coldata$Sample, levels = c("HN120Pri", "HN120Met", "HN120PCR", "HN137Pri", "HN137Met", "HN137PCR"))
 coldata$Type <-  factor(coldata$Type, levels = c("Primary", "Metastatic", "CisplatinResistant"))
 coldata$Patient <- factor(coldata$Patient)
 coldata$names <- coldata$Library
 coldata$files <- file.path(dir, coldata$names, "quant.sf")
+file.exists(coldata$files) #Check if data are in the correct directory
 
-coldata <- coldata[coldata$Patient == "HN120",]
-coldata$Sample <- factor(coldata$Sample, levels = c("HN120Pri", "HN120Met", "HN120PCR"))
-
-file.exists(coldata$files)
-
-library("tximeta")
+#Use tximeta to import all the RNAseq .quant files
 se <- tximeta(coldata)
 dim(se)
 head(rownames(se))
 
+#Process to gene level
 gse <- summarizeToGene(se) 
-
 dim(gse)
 head(rownames(gse))
-
 data(gse)
 gse
 
-library(SummarizedExperiment)
+#Use the SummarizedExperiment package to explore the data
 assayNames(gse)
 head(assay(gse), 3)
 colSums(assay(gse))
@@ -46,23 +63,24 @@ rowRanges(gse)
 seqinfo(rowRanges(gse))
 colData(gse)
 
-#Final assay is a SummarizedExperiment with the following components
+#Final assay is a SummarizedExperiment object with the following components
 #coldata: the samples metadata
 #ranges: ranges of the features (transcripts)
 #count: the actual data itself
 
+#Now we are ready for the actual DESeq2 analysis
 #Analysis with DESeq2
-#Check how many mapped fragments
-round( colSums(assay(gse)) / 1e6, 1 )
+#Check how many mapped fragments are per sample
+round(colSums(assay(gse)) / 1e6, 1 )
 
 #Construct DESeq2 object
-library("DESeq2")
+#Make sure to have the correct design!
 dds <- DESeqDataSet(gse, design = ~ Sample)
 
 #Exploratory analysis and visualization
 nrow(dds)
 
-#Keep only features with at least 10 counts or more in 3 samples
+#Filtering: keep only features with at least 10 counts or more in 3 samples
 keep <- rowSums(counts(dds) >= 10) >= 3
 dds <- dds[keep,]
 nrow(dds)
@@ -77,32 +95,57 @@ rld <- rlog(dds, blind = FALSE)
 head(assay(rld), 3)
 
 #Check transformation effects
-library("dplyr")
-library("ggplot2")
-
 dds <- estimateSizeFactors(dds)
-
 df <- bind_rows(
   as_data_frame(log2(counts(dds, normalized=TRUE)[, 1:2]+1)) %>%
          mutate(transformation = "log2(x + 1)"),
   as_data_frame(assay(vsd)[, 1:2]) %>% mutate(transformation = "vst"),
   as_data_frame(assay(rld)[, 1:2]) %>% mutate(transformation = "rlog"))
-  
 colnames(df)[1:2] <- c("x", "y")  
-
 lvls <- c("log2(x + 1)", "vst", "rlog")
 df$transformation <- factor(df$transformation, levels=lvls)
-
 ggplot(df, aes(x = x, y = y)) + geom_hex(bins = 80) +
   coord_fixed() + facet_grid( . ~ transformation)  
+  
+
+####### Z-score calculation ######
+#Use the vst transformed data and the scale function to create the raw Z-score object
+vsd <- assay(vst(dds))
+Z <- t(scale(t(vsd)))
+#Remove rows with NaN
+Z <- Z[complete.cases(Z),] #Final Z-score matrix
+Z[1:5,1:5]
+
+#Change ENSG gene annotation to more readable gene SYMBOL
+gene.list <- rownames(Z)
+gene.list <- substr(x=gene.list,start=1,stop = 15)
+symbol.list <- getGenes(geneids=gene.list, fields='symbol')
+head(symbol.list)
+rownames(Z) <- symbol.list$symbol #Replace with the new geneIDs
+Z[1:5,1:5]
+
+#Take mean Z-score for the triplicates as representative Z-score of that sample
+Z <- as.data.frame(Z)
+Z$HN120PRI <- rowMeans(Z[,1:3])
+Z$HN120MET <- rowMeans(Z[,4:6])
+Z$HN120PCR <- rowMeans(Z[,7:9])
+Z$HN137PRI <- rowMeans(Z[,10:12])
+Z$HN137MET <- rowMeans(Z[,13:15])
+Z$HN137PCR <- rowMeans(Z[,16:18])
+write.table(x = Z[,19:24], file = "/home/daniel/daniel_new/DM_SNCUTRUN_RNAseq_HN120_HN137_Zscore_allgenes.txt", quote = F, sep = "\t",
+            row.names = T, col.names = T)
+            
+####### Clustering and similarity analysis ########
+#There are multiple ways to check which samples are similar, for example:
+#1. Through calculating the euclidean distances between the samples
+#2. Through calculating the Poisson distances between the samples
+#3. Through PCA analysis
 
 #Calculate distances between samples
-#Calculate Euclidean distances between samples:
+#1. Calculate Euclidean distances between samples:
 sampleDists <- dist(t(assay(rld)))
 sampleDists
 #Visualize
-library("pheatmap")
-library("RColorBrewer")
 sampleDistMatrix <- as.matrix( sampleDists )
 rownames(sampleDistMatrix) <- paste( rld$Type, rld$Patient, sep = " - " )
 colnames(sampleDistMatrix) <- NULL
@@ -112,8 +155,7 @@ pheatmap(sampleDistMatrix,
          clustering_distance_cols = sampleDists,
          col = colors)
 
-#Calculate Poisson distances
-library("PoiClaClu")
+#2. Calculate Poisson distances
 poisd <- PoissonDistance(t(counts(dds)))
 samplePoisDistMatrix <- as.matrix( poisd$dd )
 rownames(samplePoisDistMatrix) <- paste( dds$Type, dds$Patient, sep=" - " )
@@ -123,7 +165,7 @@ pheatmap(samplePoisDistMatrix,
          clustering_distance_cols = poisd$dd,
          col = colors)
 
-#Visualize with PCA
+#3. Visualize with PCA
 #From DESeq2 package
 plotPCA(rld, intgroup = c("Type", "Patient"))
 
@@ -142,7 +184,6 @@ ggplot(pcaData, aes(x = PC1, y = PC2, color = Type, shape = Patient)) +
 #…we propose the use of GLM-PCA, a generalization of PCA to exponential family likelihoods. 
 # GLM-PCA operates on raw counts, avoiding the pitfalls of normalization. 
 # We also demonstrate that applying PCA to deviance or Pearson residuals provides a useful and fast approximation to GLM-PCA.
-library("glmpca")
 gpca <- glmpca(counts(dds), L=2)
 gpca.dat <- gpca$factors
 gpca.dat$Type <- dds$Type
@@ -158,7 +199,7 @@ ggplot(gpca.dat, aes(x = dim1, y = dim2, color = Type, shape = Patient)) +
         legend.title = element_text(size = 20),
         title = element_text(size = 24))
 
-#Differential analysis
+###### Differential analysis ######
 #Running the differential expression pipeline
 dds <- DESeq(dds)
 
@@ -178,10 +219,6 @@ table(res.05$padj < 0.05)
 resLFC1 <- results(dds, lfcThreshold=1)
 table(resLFC1$padj < 0.1)
 
-#Other comparisons
-#Check between HN137Pri and HN137Met
-#results(dds, contrast = c("Sample", "Metastatic", "Primary"))
-
 #Multiple testing
 sum(res$pvalue < 0.05, na.rm=TRUE)
 sum(!is.na(res$pvalue))
@@ -190,26 +227,12 @@ resSig <- subset(res, padj < 0.1)
 head(resSig[ order(resSig$log2FoldChange), ])
 head(resSig[ order(resSig$log2FoldChange, decreasing = TRUE), ])
 
-#Plotting results
-#Count Plot
-topGene <- rownames(res)[which.min(res$padj)]
-plotCounts(dds, gene = topGene, intgroup=c("Sample"))
-
-#Beeswarmplot
-library("ggbeeswarm")
-geneCounts <- plotCounts(dds, gene = topGene, intgroup = c("Type","Sample"),
-                         returnData = TRUE)
-ggplot(geneCounts, aes(x = Type, y = count, color = Sample)) +
-  scale_y_log10() +  geom_beeswarm(cex = 3)
-
 #Bland-Altman plot
-library("apeglm")
 resultsNames(dds)
 res <- lfcShrink(dds, coef="Sample_HN137Met_vs_HN137Pri", type="apeglm")
 plotMA(res, ylim = c(-10, 10))
 
 #Gene clustering
-library("genefilter")
 topVarGenes <- head(order(rowVars(assay(rld)), decreasing = TRUE), 20)
 mat  <- assay(rld)[ topVarGenes, ]
 mat  <- mat - rowMeans(mat)
@@ -217,8 +240,7 @@ anno <- as.data.frame(colData(rld)[, c("Sample","Type")])
 pheatmap(mat, annotation_col = anno)
 
 #Annotating results
-library("AnnotationDbi")
-library("org.Hs.eg.db")
+#Change ENSG geneIDs to more readable gene symbols
 columns(org.Hs.eg.db)
 ens.str <- substr(rownames(res), 1, 15)
 res$symbol <- mapIds(org.Hs.eg.db,
@@ -236,15 +258,13 @@ res$enstrans <- mapIds(org.Hs.eg.db,
                      column="ENSEMBL",
                      keytype="ENSEMBL",
                      multiVals="first")
-
 res
-
 
 #Check top differential genes
 resOrdered <- res[order(res$pvalue),]
 head(resOrdered)
 write.table(x = resOrdered[,c(7,6,2)],
-            file = "HN120PCR_vs_HN120Pri_top_differentially regulated gene.txt", 
+            file = "HN137Met_vs_HN137Pri_top_differentially regulated gene.txt", 
             quote = F,
             sep = "\t",
             row.names = F,
@@ -255,7 +275,7 @@ write.table(x = resOrdered[,c(7,6,2)],
 resOrdered <- res[order(res$log2FoldChange, decreasing = TRUE ),]
 resOrdered
 write.table(x = resOrdered[,c(7,6,2)],
-            file = "HN120PCR_vs_HN120Pri_top_upregulated gene.txt", 
+            file = "HN137Met_vs_HN137Pri_top_upregulated gene.txt", 
             quote = F,
             sep = "\t",
             row.names = F,
@@ -265,8 +285,6 @@ write.table(x = resOrdered[,c(7,6,2)],
 plotCounts(dds, gene = "ENSG00000137693.14" , intgroup=c("Sample"))
 
 #Gene set enrichment analysis using fgsea package
-library("fgsea")
-library("tidyverse")
 res$row <- rownames(res)
 res$symbol <- mapIds(org.Hs.eg.db,
                      keys=ens.str,
@@ -314,109 +332,5 @@ ggplot(fgseaResTidy, aes(reorder(pathway, NES), NES)) +
   labs(x="Pathway", y="Normalized Enrichment Score",
        title="Hallmark pathways NES from GSEA") + 
   theme_minimal()
-
-
-#Check gene expression of ChromHMM transition states
-#Import data
-
-setwd("D:/snCUT_RUN/results/ChromHMM")
-
-transitions <- c("E1_E1", "E1_E2", "E1_E3", "E1_E4", "E1_E5", 
-                "E2_E1", "E2_E2", "E2_E3", "E2_E4", "E2_E5",
-                "E3_E1", "E3_E2", "E3_E3", "E3_E4", "E3_E5",
-                "E4_E1", "E4_E2", "E4_E3", "E4_E5",
-                "E5_E1", "E5_E2", "E5_E3", "E5_E4", "E5_E5")
-
-trans_change <- NULL
-for (k in transitions){
-  print(paste(k))
-  primet_nearest_genes <- read.table(file = paste0("HN137Pri_HN137Met_",k,"_regions_nearest_gene.bed"), header = F)
-  head(primet_nearest_genes)
-  length(unique(primet_nearest_genes$V8))
-  genes <- unique(primet_nearest_genes$V8)
-  gene_index <- which(genes %in% resOrdered$symbol)
-  length(gene_index)
-  genes <- genes[gene_index]
-  rnaseq_gene_index <- which(resOrdered$symbol %in% genes)
-  length(rnaseq_gene_index)
-  res_subset <- resOrdered[rnaseq_gene_index,]
-  summary(res_subset$log2FoldChange)
-  change <- data.frame(transition=k, log2FoldChange=res_subset$log2FoldChange)
-  trans_change <- rbind(trans_change, change)
-  
-}
-
-ggplot(trans_change, aes(x=reorder(factor(transition),-log2FoldChange,FUN=median), y=log2FoldChange, fill = factor(transition))) +
-      geom_boxplot(width = 0.8) +
-      ylim(c(-16,15)) +
-      theme_bw() +
-      ylab("Log2(Fold Change)") +
-      xlab("") +
-        theme(legend.position = "none",
-        axis.title = element_text(size = 22),
-        axis.text.y = element_text(size = 20),
-        axis.text.x = element_text(size = 15))
-
-trans_sum <- trans_change %>% group_by(transition) %>% summarise(median=median(log2FoldChange), mean=mean(log2FoldChange))  %>% print(n=24)
-
-trans_change$expression_group <- 0
-trans_change$expression_group <- ifelse(test = trans_change$transition %in% c("E5_E1", "E5_E3", "E4_E2"),  yes = "Expression +",
-                                        ifelse(test = trans_change$transition %in% c("E2_E5", "E3_E5", "E1_E5", "E5_E5", "E2_E4"), yes = "Expression -"
-                                               , no = "Expression ="))
-trans_change$num_group <- 0
-for (l in seq_along(trans_change$transition)){
-  trans_change$num_group[l]  <-  which(levels(factor(trans_change$transition)) == trans_change$transition[l])
-  }
-
-library(ggnewscale)
-library(RColorBrewer)
-library(magrittr)
-
-mypal <- colorRampPalette(brewer.pal( 6 , "Dark2" ))
-ggplot(trans_change, aes(x=reorder(factor(num_group),-log2FoldChange,FUN=median), y=log2FoldChange, fill = factor(expression_group))) +
-  geom_boxplot(width = 0.8) +
-  scale_fill_manual(values = c("#377EB8","#E4201C","#999999")) +
-  new_scale_fill() +
-  geom_tile(data=trans_change, aes(x=factor(num_group), y=-18.5,fill=transition)) +
-  scale_fill_manual(values = mypal(24)) +
-  ylim(c(-19,15)) +
-  theme_bw() +
-  ylab("Log2(Fold Change)") +
-  xlab("HN137Pri > HN137 Met chromatin state transitions") +
-  theme(legend.position = "none",
-        axis.title = element_text(size = 22),
-        axis.text.y = element_text(size = 20),
-        axis.text.x = element_blank())
-
-
-
-
-write.table(x = trans_change,
-            file = "gene_expression_transitions.txt",
-            quote = F,
-            col.names = T,
-            row.names = F,
-            sep = "\t")
-
-trans <- split(trans_change, factor(trans_change$transition))
-
-trans2 <- rbind(trans[[1]], trans[[6]], trans[[7]])
-trans2$transition <- factor(trans2$transition, levels = c("E1_E2", "E3_E4", "E4_E3"))
-
-my_comparisons <- list( c("E1_E2", "E3_E4"), c("E3_E4", "E4_E3"), c("E1_E2", "E4_E3"))
-ggplot(trans2, aes(x=factor(transition), y=log2FoldChange, fill = factor(transition))) +
-  geom_boxplot(width = 0.8) +
-  ylim(c(-16,22)) +
-  theme_bw() +
-  ylab("Log2(Fold Change)") +
-  xlab("") +
-  scale_fill_manual(values = c("#9BBEDB", "#A6D7A4", "#CBA6D1")) +
-  scale_x_discrete(breaks = c("E1_E2", "E3_E4", "E4_E3"), labels = c("E1 > E2", "E3 > E4", "E4 > E3")) +
-  stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(13,16,19), label = "p.signif") +
-  theme(legend.position = "none",
-        axis.title = element_text(size = 22),
-        axis.text = element_text(size = 20))
-
-
 
 save.image("RNAseq_DESeq_analysis_02122021.RData")
