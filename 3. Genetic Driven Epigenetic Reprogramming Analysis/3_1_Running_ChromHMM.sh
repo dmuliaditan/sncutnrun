@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
 
+#This series of code describes the analysis to correlate gene expression, gene copy number and gene chromatin state.
+#The following workflow was used for this analysis:
+#3.1. Genome-wide chromatin state annotation with ChromHMM
+#3.2. Gene expression data analysis using RNAseq analysis
+#3.3. Gene copy number analysis with CNVKit
+#3.4. Static correlation between HN137Met gene CN and gene expression
+#3.5. Static correlation between HN137Met chromatin state and gene expression
+#3.6. Static correlation between HN137Met gene CN, chromatin state and gene expression
+#3.7. Alluvial plot detailing the global changes of chromatin state occurring between HN137Pri and HN137Met
+#3.8. Looking at enrichment of chromatin state comparing up- vs. downregulated genes in the HN137Pri > HN137Met transition
+
+#3.1.1. This section describes the script used to run ChromHMM to 
+#Version 16/06/2022
+#Daniel Muliaditan
+
+#Required input:
+#-Reference file with chromosome names and chromosomes sizes (in this analysis hg38 chromosome annotations were used)
+#-Normalised .bam files of the samples and sample controls (in this case, rabbit IgG bulk CUT&RUN data was used)
+#-Metadata cell mark table detailing the following columns: sample, histone mark, path to sample .bam, path to matched control .bam of that sample
+
+#Install ChromHMM: http://compbio.mit.edu/ChromHMM/
+
+#Set reference directory
 REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
 mkdir /mnt/d/snCUT_RUN/results/ChromHMM/control
 
 #Binarize the normalised IgG control .bams and normalised sample .bams with BinarizeBam to create the input of LearnModel
 java -Xms8g -Xmx12g -jar /mnt/d/programmes/ChromHMM/ChromHMM.jar BinarizeBam \
 -paired -gzip \
--c /mnt/d/snCUT_RUN/data/final_bams/normalised_bams/control \
--o /mnt/d/snCUT_RUN/results/ChromHMM/control \
-"$REFERENCE_DIR"'/hg38.chrom.sizes.txt' \
-/mnt/d/snCUT_RUN/data/final_bams/normalised_bams \
-/mnt/d/snCUT_RUN/scripts/chromHMM_cell_mark_table.txt \
-/mnt/d/snCUT_RUN/results/ChromHMM
+-c /mnt/d/snCUT_RUN/data/final_bams/normalised_bams/control \ #Put the control .bams in this directory
+-o /mnt/d/snCUT_RUN/results/ChromHMM/control \ #Output directory for the control .bams
+"$REFERENCE_DIR"'/hg38.chrom.sizes.txt' \ #Reference chromosome size file
+/mnt/d/snCUT_RUN/data/final_bams/normalised_bams \ #Input directory of the sample .bams
+/mnt/d/snCUT_RUN/scripts/chromHMM_cell_mark_table.txt \ #Metadata detailing the input as described above
+/mnt/d/snCUT_RUN/results/ChromHMM 
 
 #Run ChromHMM LearnModel on the binarized .bams
 #Rerun at different number of states and compare biological significance of the results
