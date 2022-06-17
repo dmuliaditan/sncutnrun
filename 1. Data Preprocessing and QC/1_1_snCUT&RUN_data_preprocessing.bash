@@ -103,6 +103,12 @@ while read k; do
   --ASSUME_SORTED true --REMOVE_DUPLICATES true
   "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam' -@ 8 > "$results_dir"'/final_bams/'"$i"'.bam'
   "$SAMTOOLS" index "$results_dir"'/final_bams/'"$i"'.bam' -@ 8
+  
+  # To calculate the number of Unique Mapped Reads for each paired ended and deduplicated single cell bam file, the following script was used (as per following reference).
+  # http://qnot.org/2012/04/14/counting-the-number-of-reads-in-a-bam-file/
+  # -c = count, -f 1 = only reads which are paired in sequencing, -F 12 means to include all reads where neither flag 0x0004 or 0x0008 is set, where 0x0004 is not unmapped reads and 0x0008 is where the mate is not unmapped (only include reads where it maps and its mate also map). 
+  samtools view -c -f 1 -F 12 "$results_dir"'/final_bams/'"$i"'.bam' >
+  
 
   msg="Remove old and unsorted bam and sam, and preprocessing beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   rm "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam'
@@ -116,6 +122,8 @@ while read k; do
 
   done
 
+  
+  
   msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   ls -d "$SEQUENCE_DIR"'/'"$k"'/results_dir/final_bams/'*'_.bam' > \
   "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist.txt'
