@@ -104,31 +104,12 @@ while read k; do
   "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam' -@ 8 > "$results_dir"'/final_bams/'"$i"'.bam'
   "$SAMTOOLS" index "$results_dir"'/final_bams/'"$i"'.bam' -@ 8
 
-  msg="Convert cell bam to bed with bedtools bamtobed and sort bed: Cell no: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-  "$SAMTOOLS" sort -n -o "$results_dir"'/final_bams/'"$i"'namesorted.bam' -@ 8 "$results_dir"'/final_bams/'"$i"'.bam'
-  "$BEDTOOLS" bamtobed -i "$results_dir"'/final_bams/'"$i"'namesorted.bam' -bedpe \
-  | awk '{if($2!="-1") print}' | sort -k1,1 -k2,2n | cut -f1,2,6,7 > "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed'
-  cat "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed' | grep -v random | grep -v Un | grep -v alt | grep -v chrM | grep -v HLA | grep -v EBV \
-  > "$results_dir"'/beds_and_bedgraphs/'"$i"'presort.bed'
-  "$BEDTOOLS" sort -i "$results_dir"'/beds_and_bedgraphs/'"$i"'presort.bed' \
-  -faidx "$REFERENCE_DIR"'/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta.fai' > \
-  "$results_dir"'/beds_and_bedgraphs/'"$i""$k"'.bed'
-  perl -p -i -e 's/ /\t/g' "$results_dir"'/beds_and_bedgraphs/'"$i""$k"'.bed'
-
-
-  msg="Convert cell bed to bedgraph with bedtools genomecov: Cell no: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-  "$BEDTOOLS" genomecov -i "$results_dir"'/beds_and_bedgraphs/'"$i""$k"'.bed' \
-  -g "$REFERENCE_DIR"'/hg38.chrom.sizes.txt' -bg > "$results_dir"'/beds_and_bedgraphs/'"$i""$exp"'.bedGraph'
-  echo $i
-
   msg="Remove old and unsorted bam and sam, and preprocessing beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   rm "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam'
   rm "$results_dir"'/processed_bams/sam/'"$i"'.sam'
   rm "$results_dir"'/processed_bams/bam/'"$i"'_sorted.bam'
   rm "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam'
-  rm "$results_dir"'/beds_and_bedgraphs/'"$i"'preproc.bed'
-  rm "$results_dir"'/beds_and_bedgraphs/'"$i"'presort.bed'
-
+ 
   msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   gzip "$fastqdir"'/'"$i"'R1_001.fastq'
   gzip "$fastqdir"'/'"$i"'R2_001.fastq'
@@ -140,11 +121,7 @@ while read k; do
   "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist.txt'
   cat "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist.txt' >> \
   "$AGGR_RESULTS_DIR"'/bamlists/'"$p"'_bamslist.txt'
-  ls -d "$SEQUENCE_DIR"'/'"$k"'/results_dir/final_bams/'*'_namesorted.bam' > \
-  "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist_namesorted.txt'
-  cat "$AGGR_RESULTS_DIR"'/bamlists/'"$k"'_bamslist_namesorted.txt' >> \
-  "$AGGR_RESULTS_DIR"'/bamlists/'"$p"'_bamslist_namesorted.txt'
-
+  
   msg="Finished"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 
 done
@@ -175,6 +152,10 @@ done
   msg="Call peaks on each merged bam using "$MACS2""; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   "$MACS2" callpeak -t "$AGGR_RESULTS_DIR"'/aggregate_bams'"$p"'_sorted.bam' --outdir "$AGGR_RESULTS_DIR"'/macs2' -n "$p"'_q0_1' \
   -f AUTO -g hs --keep-dup auto -B --verbose 2 --nomodel --shift 0 --ext 200 --d-min 20 --qval 0.1 --SPMR --broad --broad-cutoff 0.1
+  
+  bedtools bamtobed -i /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.bam | awk 'BEGIN{OFS="\t"}{$4="N";$5="1000";print $0}' > /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.tagAlign
+bedtools sort -i /mnt/raid5/cutnrun/userFiles/howard/macs2normalised/120pri_k27ac_norm_sort_peaks.narrowPeak | bedtools merge -i stdin | bedtools intersect -u -a /new/howard_new/sequence_runs/pathToBamFiles/S${i}_PE_rmdup1.tagAlign -b stdin | wc -l
+done
 
   #Convert peaks to beds
   msg="Convert peaks to beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
