@@ -224,24 +224,6 @@ done
     rm "$TMP_DIR"'/'"$s"'_postsort.bed'
     rm "$TMP_DIR"'/'"$s"'.txt'
 
-    #Intersect single-cell bam files with aggregate peaks, and calculate amount of overlapping fragments
-    msg="Intersect single-cell bam files with aggregate peaks, and calculate amount of overlapping fragments"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-
-    "$BEDTOOLS" intersect -a "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_peaks.bed' \
-    -b "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.bed' -c -sorted -g "$REFERENCE_DIR"'/GATK_chrom_sizes.txt' \
-    | awk '{i+=$4}END{print i}' > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'overlapping_peaks.txt'
-
-    #Intersect single-cell bam files with blacklist regions, and calculate amount of overlapping fragments
-    msg="Intersect single-cell bam files with blacklist regions, and calculate amount of overlapping fragments"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-    "$BEDTOOLS" intersect -a "$REFERENCE_DIR"'/hg38_sorted.blacklist.bed' \
-    -b "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.bed' -c -sorted -g "$REFERENCE_DIR"'/GATK_chrom_sizes.txt' \
-    | awk '{i+=$4}END{print i}' > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'overlapping_blacklist.txt'
-
-    #Calculate number of fragments of single-cell beds
-    msg="Calculate number of fragments of single-cell beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-    nrow=$(wc -l < "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.bed')
-    echo "$nrow" > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.txt'
-
     #Compile barcode file per cell and append to master barcode file
     msg="Compile barcode file per cell and append to master barcode file"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
     echo "$s" > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_barcode.txt'
