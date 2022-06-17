@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#This series of code describes the analysis to correlate gene expression, gene copy number and gene chromatin state.
+#These series of code describes the analysis to correlate gene expression, gene copy number and gene chromatin state.
 #The following workflow was used for this analysis:
 #3.1. Genome-wide chromatin state annotation with ChromHMM
 #3.2. Gene expression data analysis using RNAseq analysis
@@ -10,6 +10,7 @@
 #3.6. Static correlation between HN137Met gene CN, chromatin state and gene expression
 #3.7. Alluvial plot detailing the global changes of chromatin state occurring between HN137Pri and HN137Met
 #3.8. Looking at enrichment of chromatin state comparing up- vs. downregulated genes in the HN137Pri > HN137Met transition
+#3.9. Looking at enrichment of chromatin state in regions affected by CN change during the HN137Pri > HN137Met transition
 
 #3.1.1. This section describes the script used to run ChromHMM to annotate genomic regions with chromatin state.
 #Version 16/06/2022
