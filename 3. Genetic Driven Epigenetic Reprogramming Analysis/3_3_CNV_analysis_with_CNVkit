@@ -1,13 +1,49 @@
 #!/usr/bin/bash
 
 #3.3. Analysis of WES data to call gene CN and call CNVs
-#Version 16/06/2022
+#Version 17/06/2022
 #Daniel Muliaditan
 
 #Required input:
-#-WES analysis ready .bams (GATK best practices pipeline was used for this)
+#-WES analysis ready .bams (GATK best practices pipeline was used for this). .bams were normalised for number of reads to match the sample with the lowest reads (HN137Met)
+#-Genome reference .fasta (for this the hg38 genome reference from the Broad Institute was used)
+#-RefFlat gene annotation. This is an annotation file per gene with chromosome coordinates etc. Downloadable from http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refFlat.txt.gz
+#-Target exome coordinates. For this an annotation file from Agilent was downloaded. The file depicts the target exons that is captured by the kit, in this case the Agilent SureSelect.
 
 #Required tools: CNVkit, for install see: https://cnvkit.readthedocs.io/en/stable/
 
 #Output: 
 #-CNVkit output with amongst other copy number calls used for this study
+
+#CNVkit v0.9.8
+#Use CNVkit access to subset reference genome to exclude regions that are not well suited for CN calling such as repetitive genome, telomere, centromeres etc
+cnvkit.py access -o /home/daniel/genome_references/hg38_reference/hg38_accessible_regions_5kb.bed \
+/home/daniel/genome_references/hg38_reference/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+
+#Run CNVkit to create a reference output
+cnvkit.py batch -m hybrid --drop-low-coverage \
+-p 8 -n -f /home/daniel/genome_references/hg38_reference/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta \
+-t /home/daniel/genome_references/hg38_reference/S07604514_Padded_Agilent.bed --annotate /home/daniel/genome_references/hg38_reference/refFlat.txt \
+-g /home/daniel/genome_references/hg38_reference/hg38_accessible_regions_5kb.bed \
+--output-reference /home/daniel/snCUT_RUN/wes/CNV/cnvkit/hg38_WES_reference.cnn -d /home/daniel/snCUT_RUN/wes/CNV/cnvkit
+
+for j in HN120PRI_subsampled_sorted HN120MET_subsampled_sorted HN120PCR_subsampled_sorted HN137PRI_subsampled_sorted HN137MET HN137PCR_subsampled_sorted
+do
+
+#CNVkit run on Docker, the local drive was mounted onto Docker
+cnvkit.py batch --drop-low-coverage -p 8 \
+-r /home/daniel/snCUT_RUN/wes/CNV/cnvkit/hg38_WES_reference.cnn \
+-d /home/daniel/snCUT_RUN/wes/CNV/cnvkit '/home/daniel/snCUT_RUN/wes/results_dir/final_bams/'"$j"'.bam' --scatter --diagram
+
+#Make 50kb windows, not used for final manuscript
+#awk '{ print $1, $2, $3, $6}' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'.call.cns' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed'
+#tail -n+2 '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN.bed' > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
+#perl -p -i -e 's/ /\t/g' '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed'
+#bedtools makewindows -b '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN2.bed' -i src -w 2500 > '/mnt/d/snCUT_RUN/wes/CNV/cnvkit/'"$j"'_CN_2_5kb_binned.bed'
+
+done 
+
+#Intersect all the interval files, not used for final manuscript
+#bedtools multiinter -i HN120PRI_subsampled_sorted_CN_2_5kb_binned.bed HN120MET_subsampled_sorted_CN_2_5kb_binned.bed HN120PCR_subsampled_sorted_CN_2_5kb_binned.bed \
+#HN137PRI_subsampled_sorted_CN_2_5kb_binned.bed HN137MET_CN_2_5kb_binned.bed HN137PCR_subsampled_sorted_CN_2_5kb_binned.bed \
+#-names HN120PRI HN120MET HN120PCR HN137PRI HN137MET HN137PCR > HN120_HN137_CNVKIT_merged_2_5kb.bed
