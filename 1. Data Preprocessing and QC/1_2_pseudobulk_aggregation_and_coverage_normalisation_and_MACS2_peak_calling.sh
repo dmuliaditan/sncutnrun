@@ -47,7 +47,7 @@ do
 #Call peaks on each merged bam using MACS2
 msg="Call peaks on each merged bam using "$MACS2""; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 "$MACS2" callpeak -t "$AGGR_RESULTS_DIR"'/final_bams/pseudobulk/'"$p"'_norm_sort.bam' --outdir "$AGGR_RESULTS_DIR"'/macs2' \
--g hs -f BAMPE --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
+-n "$p"'_norm_sort' --seed 1234 -g hs -f BAMPE --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
   
 done
 
