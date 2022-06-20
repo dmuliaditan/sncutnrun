@@ -6,13 +6,7 @@
 #Set variables
 longLine="--------------------"
 SAMTOOLS='samtools'
-REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
-BOWTIE="bowtie2"
-BOWTIE_INDEX='/mnt/d/genome_references/bowtie2_indexes/hg38'
-BEDTOOLS='bedtools'
 MACS2='macs2'
-SCRIPT_DIR='/mnt/d/snCUT_RUN/scripts'
-SEQUENCE_DIR='/mnt/d/snCUT_RUN/sequence_runs'
 AGGR_RESULTS_DIR='/mnt/d/snCUT_RUN/data'
 THREADS=8
 
