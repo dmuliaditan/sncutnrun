@@ -3,14 +3,10 @@
 #Set variables and directories
 longLine="--------------------"
 SAMTOOLS='samtools'
-GATK_DIR='/mnt/d/programmes/gatk-4.1.4.1/gatk-package-4.1.4.1-local.jar'
-JAVA_DIR='java'
 REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
 BEDTOOLS='bedtools'
-SCRIPT_DIR='/mnt/d/snCUT_RUN/scripts'
 SEQUENCE_DIR='/mnt/d/snCUT_RUN/sequence_runs'
 AGGR_RESULTS_DIR='/mnt/d/snCUT_RUN/data'
-THREADS=8
 
 mkdir -p "$AGGR_RESULTS_DIR"'/tmp_dir'
 TMP_DIR="$AGGR_RESULTS_DIR"'/tmp_dir'
