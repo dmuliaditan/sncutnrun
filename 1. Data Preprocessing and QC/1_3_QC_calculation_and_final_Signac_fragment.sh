@@ -6,10 +6,7 @@ SAMTOOLS='samtools'
 GATK_DIR='/mnt/d/programmes/gatk-4.1.4.1/gatk-package-4.1.4.1-local.jar'
 JAVA_DIR='java'
 REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
-BOWTIE="bowtie2"
-BOWTIE_INDEX='/mnt/d/genome_references/bowtie2_indexes/hg38'
 BEDTOOLS='bedtools'
-MACS2='macs2'
 SCRIPT_DIR='/mnt/d/snCUT_RUN/scripts'
 SEQUENCE_DIR='/mnt/d/snCUT_RUN/sequence_runs'
 AGGR_RESULTS_DIR='/mnt/d/snCUT_RUN/data'
@@ -51,17 +48,17 @@ do
     # To calculate the number of Unique Mapped Reads for each paired ended and deduplicated single cell bam file, the following script was used (as per following reference).
     # http://qnot.org/2012/04/14/counting-the-number-of-reads-in-a-bam-file/
     # -c = count, -f 1 = only reads which are paired in sequencing, -F 12 means to include all reads where neither flag 0x0004 or 0x0008 is set, where 0x0004 is not unmapped reads and 0x0008 is where the mate is not unmapped (only include reads where it maps and its mate also map). 
-    samtools view -c -f 1 -F 12 "$o" > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.txt'
+    "$SAMTOOLS" view -c -f 1 -F 12 "$o" > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.txt'
     
     #2. Calculate Number of Reads in Peaks (FRiP)
     #Convert single-cell bams to beds
     #For each paired ended and deduplicated single cell bam file, a tagAlign bed file was created, intersected with reference macs2 narrowPeak file, then then the number of intersections were counted
-    bedtools bamtobed -i "$o" | awk 'BEGIN{OFS="\t"}{$4="N";$5="1000";print $0}' > "$u""$v"'.tagAlign'
-    bedtools sort -i "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_norm_sort_peaks.narrowPeak' | bedtools merge -i stdin | bedtools intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_peaks.txt'
+    "$BEDTOOLS" bamtobed -i "$o" | awk 'BEGIN{OFS="\t"}{$4="N";$5="1000";print $0}' > "$u""$v"'.tagAlign'
+    "$BEDTOOLS" sort -i "$AGGR_RESULTS_DIR"'/macs2/'"$p"'_norm_sort_peaks.narrowPeak' | "$BEDTOOLS" merge -i stdin | "$BEDTOOLS" intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_peaks.txt'
 
     #2. Calculate Number Reads in Blacklist (FRiB)
     #For each paired ended and deduplicated single cell bam file, a tagAlign bed file was created, intersected with reference Blacklist file, then then the number of intersections were counted
-    bedtools sort -i "$REFERENCE_DIR"'/hg38.blacklist.bed' | bedtools merge -i stdin | bedtools intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_blacklist.txt'
+    "$BEDTOOLS" sort -i "$REFERENCE_DIR"'/hg38.blacklist.bed' | "$BEDTOOLS" merge -i stdin | "$BEDTOOLS" intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_blacklist.txt'
     
     #Compile barcode file per cell and append to master barcode file
     msg="Compile barcode file per cell and append to master barcode file"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
