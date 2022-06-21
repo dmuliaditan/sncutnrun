@@ -7,9 +7,6 @@ GATK_DIR='/mnt/d/programmes/gatk-4.1.4.1/gatk-package-4.1.4.1-local.jar'
 JAVA_DIR='java'
 REFERENCE_DIR='/mnt/d/genome_references/hg38_reference'
 BOWTIE="bowtie2"
-BOWTIE_INDEX='/mnt/d/genome_references/bowtie2_indexes/hg38'
-BEDTOOLS='bedtools'
-MACS2='macs2'
 SCRIPT_DIR='/mnt/d/snCUT_RUN/scripts'
 SEQUENCE_DIR='/mnt/d/snCUT_RUN/sequence_runs'
 AGGR_RESULTS_DIR='/mnt/d/snCUT_RUN/data'
@@ -83,17 +80,17 @@ while read k; do
 
   msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   msg="Map with bowtie2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-  "$BOWTIE" -p 8 --end-to-end --very-sensitive --no-mixed --no-discordant \
+  "$BOWTIE" -p "$THREADS" --end-to-end --very-sensitive --no-mixed --no-discordant \
   --met-file "$results_dir"'/processed_bams/sam/'"$i"'.txt' \
   -q --phred33 -I 10 -X 700 -x "$BOWTIE_INDEX"'/hg38' \
   -1 "$fastqdir"'/'"$i"'R1_001.fastq' \
   -2 "$fastqdir"'/'"$i"'R2_001.fastq' > "$results_dir"'/processed_bams/sam/'"$i"'.sam'
 
   msg="Convert sam to bam"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-  "$SAMTOOLS" view -Sb "$results_dir"'/processed_bams/sam/'"$i"'.sam' -@ 8 > "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam'
+  "$SAMTOOLS" view -Sb "$results_dir"'/processed_bams/sam/'"$i"'.sam' -@ "$THREADS" > "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam'
 
   msg="Sort bam with "$SAMTOOLS""; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
-  "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam' -@ 8 > "$results_dir"'/processed_bams/bam/'"$i"'_sorted.bam'
+  "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam' -@ "$THREADS" > "$results_dir"'/processed_bams/bam/'"$i"'_sorted.bam'
 
   msg="Mark and remove duplicates with Picard and sort with "$SAMTOOLS""; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   "$JAVA_DIR" -Xms8g -Xmx12g -jar "$GATK_DIR" MarkDuplicates \
@@ -101,8 +98,8 @@ while read k; do
   -O "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam' \
   -M "$results_dir"'/processed_bams/bam/'"$i"'_sorted_metrics.txt' \
   --ASSUME_SORTED true --REMOVE_DUPLICATES true
-  "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam' -@ 8 > "$results_dir"'/final_bams/'"$i"'.bam'
-  "$SAMTOOLS" index "$results_dir"'/final_bams/'"$i"'.bam' -@ 8
+  "$SAMTOOLS" sort "$results_dir"'/processed_bams/bam/'"$i"'_rmdup.bam' -@ "$THREADS" > "$results_dir"'/final_bams/'"$i"'.bam'
+  "$SAMTOOLS" index "$results_dir"'/final_bams/'"$i"'.bam' -@ "$THREADS"
   
   msg="Remove old and unsorted bam and sam, and preprocessing beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   rm "$results_dir"'/processed_bams/bam/'"$i"'_unsort.bam'
