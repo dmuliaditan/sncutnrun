@@ -1,13 +1,13 @@
 # Single nucleus CUT&RUN to assess epigenetic heterogeneity in head and neck cancer progression
 Repository for all the code used in the snCUT&amp;RUN project
 
-Daniel Muliaditan, 17 June 2022
+Daniel Muliaditan, 21 June 2022
 
 Table of Content:
 1. Data Preprocessing<br/>
-	1.1. Preprocessing individual single-cell .fastq to single-cell .bam, aggregating single-cell .bam to pseudobulk .bam, 
-	peak calling on pseduobulk .bam with MACS2, calculating Fraction Reads in Peaks (FRiP) and Fraction Reads in Blacklist (FRiB) for QC purposes,
-	and getting analysis ready fragment file for Signac.
+	1.1. Preprocessing individual single-cell .fastq to single-cell .bam<br/>
+	1.2. Aggregating single-cell .bam to pseudobulk .bam, pseudobulk .bam normalisation, peak calling on pseduobulk .bam with MACS2<br/>
+	1.3. Calculating Uniquely Mapped Reads and Fraction Reads in Peaks (FRiP) and Fraction Reads in Blacklist (FRiB) for QC purposes, and getting analysis ready 	     fragment file for Signac.
 
 2. Signac analysis<br/>
 	2.1. Loading necessary packages and creating a chromatin assay<br/>
