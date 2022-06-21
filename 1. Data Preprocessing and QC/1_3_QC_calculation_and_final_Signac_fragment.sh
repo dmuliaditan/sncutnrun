@@ -18,7 +18,7 @@ THREADS=8
 mkdir -p "$AGGR_RESULTS_DIR"'/tmp_dir'
 TMP_DIR="$AGGR_RESULTS_DIR"'/tmp_dir'
 
-for p in 120pri_k4me3 120pri_k27ac etc
+for p in 120met_k27ac
 do
   echo "$p"
   
@@ -61,7 +61,7 @@ do
 
     #2. Calculate Number Reads in Blacklist (FRiB)
     #For each paired ended and deduplicated single cell bam file, a tagAlign bed file was created, intersected with reference Blacklist file, then then the number of intersections were counted
-    bedtools sort -i /path/to/hg38_sorted.blacklist.bed | bedtools merge -i stdin | bedtools intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'overlapping_blacklist.txt'
+    bedtools sort -i "$REFERENCE_DIR"'/hg38.blacklist.bed' | bedtools merge -i stdin | bedtools intersect -u -a "$u""$v"'.tagAlign' -b stdin | wc -l > "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_blacklist.txt'
     
     #Compile barcode file per cell and append to master barcode file
     msg="Compile barcode file per cell and append to master barcode file"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -72,11 +72,17 @@ do
     "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.txt' \
     "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_experiment.txt' \
     "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_experiment.txt' \
-    "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'overlapping_peaks.txt' \
-    "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'overlapping_blacklist.txt' \
+    "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_peaks.txt' \
+    "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_blacklist.txt' \
     > "$AGGR_RESULTS_DIR"'/signac_fragments/'"$s"'_barcodes_precount.txt'
     cat "$AGGR_RESULTS_DIR"'/signac_fragments/'"$s"'_barcodes_precount.txt' >> "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_precount.txt'
     
+    rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_barcode.txt'
+    rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'.txt'
+    rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_experiment.txt'
+    rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_peaks.txt'
+    rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'"$s"'_overlapping_blacklist.txt'
+    rm "$AGGR_RESULTS_DIR"'/signac_fragments/'"$s"'_barcodes_precount.txt'
    
    
   done
@@ -84,7 +90,7 @@ do
   #Combine beds into large fragment file
   msg="Combine beds into large bed file"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   cat "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'*'.bed' > "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_combined_preproc.bed'
-  
+    
   #Calculate % Reads in Peaks and % Reads in Blacklist
   msg="Calculate FRiP and % in blacklist"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   awk '{$7 = $5 / $2 * 100}1' "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_precount.txt' | sort -n -k 1 | column -t > "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_postcount.txt'
@@ -94,8 +100,8 @@ do
   msg="Remove processing FRiP files"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   rm "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_precount.txt'
   rm "$AGGR_RESULTS_DIR"'/signac_fragments/'"$p"'_barcodes_postcount.txt'
-  rm -r "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp'
-
+  rm "$AGGR_RESULTS_DIR"'/aggregate_beds_and_bedgraphs/tmp/'*'.bed'
+ 
   msg="Next AB/Cell line!"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
   
 done
