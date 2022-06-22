@@ -8,11 +8,37 @@
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
-load(file = "22062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
 
 library(dplyr)
 library(ggplot2)
 library(stringr)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000")
+
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#AA4499", "#332288",  
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+#Extract chromatin state data from ChromHMM results
+#HN137Pri --> HN137Met transition data was used to extract HN137Met annotation states
+#The second state (e.g. in E1_E2 it will be E2), is the state in HN137Met
+states <- c("E1_E1", "E1_E2", "E1_E3", "E1_E4", "E1_E5",
+            "E2_E1", "E2_E2", "E2_E3", "E2_E4", "E2_E5",
+            "E3_E1", "E3_E2", "E3_E3", "E3_E4", "E3_E5",
+            "E4_E1", "E4_E2", "E4_E3", "E4_E5",
+            "E5_E1", "E5_E2", "E5_E3", "E5_E4", "E5_E5")
+
+#Import all the chromatin state data
+epistate <- list()
+for (k in seq_along(states)) {
+  print(paste(states[k]))
+  epistate[[k]] <- read.table(paste0("D:/snCUT_RUN/results/ChromHMM/HN137Pri_HN137Met_",states[k],"_regions_nearest_gene.bed"), header = F)
+}
+names(epistate) <- states
+epistate[[1]]
+
+#HN137Met RNAseq Zscore - chromatin state correlation
+#Annotate HN137Met epigenetic states
+#H3K27me3+ positive genes were removed due to low numbers
 
 #Define genes gaining or losing H3K4me3 and H3K27ac
 gain_k4me3 <- data.frame(GENE=rbind(epistate[[11]], epistate[[12]],epistate[[16]],epistate[[20]]), STATE="+H3K4me3")
