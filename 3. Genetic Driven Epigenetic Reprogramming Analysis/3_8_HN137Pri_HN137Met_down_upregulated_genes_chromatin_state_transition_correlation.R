@@ -1,6 +1,6 @@
-#4. Stratifying down- and upregulated genes in the HN137Pri > HN137Met transition by chromatin state
+#3.8. Stratifying down- and upregulated genes in the HN137Pri > HN137Met transition by chromatin state
 
-#Version: 10/06/2022
+#Version: 22/06/2022
 #Author: Daniel Muliaditan
 
 #After static correlation, now we look at the transition between HN137Pri and HN137Met. 
@@ -8,7 +8,7 @@
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
-load(file = "01062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
+load(file = "22062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
 
 library(dplyr)
 library(ggplot2)
