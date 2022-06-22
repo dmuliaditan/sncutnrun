@@ -1,6 +1,6 @@
 #3.5. Static Chromatin State-RNAseq-Zscore correlation in the HN137Met cell line
 
-#Version: 10/06/2022
+#Version: 22/06/2022
 #Author: Daniel Muliaditan
 
 #After correlating gene expression and copy number, now correlate gene expression and chromatin state,
@@ -14,55 +14,11 @@ library(ggpubr)
 library(stringr)
 library(ggplot2)
 
-#Extract chromatin state data from ChromHMM results
-#HN137Pri --> HN137Met transition data was used to extract HN137Met annotation states
-#The second state (e.g. in E1_E2 it will be E2), is the state in HN137Met
-states <- c("E1_E1", "E1_E2", "E1_E3", "E1_E4", "E1_E5",
-            "E2_E1", "E2_E2", "E2_E3", "E2_E4", "E2_E5",
-            "E3_E1", "E3_E2", "E3_E3", "E3_E4", "E3_E5",
-            "E4_E1", "E4_E2", "E4_E3", "E4_E5",
-            "E5_E1", "E5_E2", "E5_E3", "E5_E4", "E5_E5")
-
-#Import all the chromatin state data
-epistate <- list()
-for (k in seq_along(states)) {
-  print(paste(states[k]))
-  epistate[[k]] <- read.table(paste0("D:/snCUT_RUN/results/ChromHMM/HN137Pri_HN137Met_",states[k],"_regions_nearest_gene.bed"), header = F)
-}
-names(epistate) <- states
-epistate[[1]]
-
-#HN137Met RNAseq Zscore - chromatin state correlation
-#Annotate HN137Met epigenetic states
-#H3K27me3+ positive genes were removed due to low numbers
-
-E1_genes <- data.frame(GENE=rbind(epistate[[1]],
-                                  epistate[[6]],
-                                  epistate[[11]],
-                                  epistate[[16]],
-                                  epistate[[20]]),
-                       STATE="H3K4me3+/H3K27ac-")
-E2_genes <- data.frame(GENE=rbind(epistate[[2]],
-                                  epistate[[7]],
-                                  epistate[[12]],
-                                  epistate[[17]],
-                                  epistate[[21]]),
-                       STATE="H3K4me3+/H3K27ac+")
-E3_genes <- data.frame(GENE=rbind(epistate[[3]],
-                                  epistate[[8]],
-                                  epistate[[13]],
-                                  epistate[[18]],
-                                  epistate[[22]]),
-                       STATE="H3K4me3-/H3K27ac+")
-E4_genes <- data.frame(GENE=rbind(epistate[[4]],
-                                  epistate[[9]],
-                                  epistate[[14]],
-                                  epistate[[23]]),
-                       STATE="H3K4me3-/H3K27ac-")
+#Load HN137Met chromatin states
+chromstate <- read.table("D:/snCUT_RUN/results/ChromHMM/HN137Met_binned_promoters_nearest_gene.bed")
 
 #Combine into a big data.frame
-chromstate <- rbind(E1_genes, E2_genes, E3_genes, E4_genes)
-chromstate <- chromstate[,c(8,10)]
+chromstate <- chromstate[,c(8,4)]
 colnames(chromstate) <- c("GENE", "STATE")
 table(chromstate$STATE)
 length(unique(chromstate$GENE))
@@ -70,6 +26,18 @@ length(unique(chromstate$GENE))
 #Remove genes with NA
 chromstate <- chromstate[which(is.na(chromstate$GENE) == F),]
 head(chromstate, n = 50)
+#Remove H3K27me3 genes
+E5 <- which(chromstate$STATE == "E5")
+chromstate <- chromstate[-E5,]
+chromstate <- droplevels.data.frame(chromstate)
+
+#Reannotate chromatin state
+chromstate$STATE <- ifelse(test = chromstate$STATE == "E1", yes = "H3K4me3+/H3K27ac-", 
+                           no = ifelse(test = chromstate$STATE == "E2", yes = "H3K4me3+/H3K27ac+",
+                                       no = ifelse(test = chromstate$STATE == "E3", yes = "H3K4me3-/H3K27ac+",
+                                                   no = "H3K4me3-/H3K27ac-")))
+head(chromstate, n = 50)
+table(chromstate$STATE)
 
 #Annotate each gene with a chromatin state
 #Some genes have multiple gene annotations due to the high resolution of ChromHMM annotation (200bp)
@@ -121,58 +89,58 @@ for (j in unique(chromstate$GENE)) {
       if ("H3K4me3+/H3K27ac+" %in% unique(activetable$Var1) == T) {
         
         if ((activetable$Freq[activetable$Var1 == "H3K4me3+/H3K27ac+"]) / sum(activetable$Freq) >= 0.2) {
-        finalannot <- data.frame(GENE=j, STATE= "H3K4me3+/H3K27ac+")
-        genechrom <- rbind(genechrom, finalannot)
-        next
-      }
-      
-      #If less than 20% of the bins is H3K4me3+/H3K27ac+, compare the ratio between H3K4me3 and H3K27ac
-        if ((activetable$Freq[activetable$Var1 == "H3K4me3+/H3K27ac+"]) / sum(activetable$Freq) < 0.2) {
-        resttable <- activetable[which(activetable$Var1 != "H3K4me3+/H3K27ac+"),]
-        
-        #If all bins are the same annotation
-        if (nrow(resttable) == 1) {
-          finalannot <- data.frame(GENE=j, STATE= resttable$Var1)
-          genechrom <- rbind(genechrom, finalannot)
-          next
-          
-        }
-        
-        
-        #If more than 60% of bins is annotated with H3K4me3+/H3K27ac-, categorize as H3K4me3+/H3K27ac-
-        if (resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) > 0.6 &
-            resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) < 0.4) {
-          
-          finalannot <- data.frame(GENE=j, STATE= "H3K4me3+/H3K27ac-")
-          genechrom <- rbind(genechrom, finalannot)
-          next
-          
-        }
-        
-        #If more than 60% of bins is annotated with H3K4me3-/H3K27ac+, categorize as H3K4me3-/H3K27ac+
-        if (resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) > 0.6 &
-            resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) < 0.4) {
-          
-          finalannot <- data.frame(GENE=j, STATE= "H3K4me3-/H3K27ac+")
-          genechrom <- rbind(genechrom, finalannot)
-          next
-          
-        }
-        
-        
-        #If ratio of H3K4me3+ bins and H3K27ac+ bins are similar, categorize as H3K4me3+/H3K27ac+
-        if (resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) > 0.4 &
-            resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) > 0.4) {
-          
           finalannot <- data.frame(GENE=j, STATE= "H3K4me3+/H3K27ac+")
           genechrom <- rbind(genechrom, finalannot)
           next
+        }
+        
+        #If less than 20% of the bins is H3K4me3+/H3K27ac+, compare the ratio between H3K4me3 and H3K27ac
+        if ((activetable$Freq[activetable$Var1 == "H3K4me3+/H3K27ac+"]) / sum(activetable$Freq) < 0.2) {
+          resttable <- activetable[which(activetable$Var1 != "H3K4me3+/H3K27ac+"),]
+          
+          #If all bins are the same annotation
+          if (nrow(resttable) == 1) {
+            finalannot <- data.frame(GENE=j, STATE= resttable$Var1)
+            genechrom <- rbind(genechrom, finalannot)
+            next
+            
+          }
+          
+          
+          #If more than 60% of bins is annotated with H3K4me3+/H3K27ac-, categorize as H3K4me3+/H3K27ac-
+          if (resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) > 0.6 &
+              resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) < 0.4) {
+            
+            finalannot <- data.frame(GENE=j, STATE= "H3K4me3+/H3K27ac-")
+            genechrom <- rbind(genechrom, finalannot)
+            next
+            
+          }
+          
+          #If more than 60% of bins is annotated with H3K4me3-/H3K27ac+, categorize as H3K4me3-/H3K27ac+
+          if (resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) > 0.6 &
+              resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) < 0.4) {
+            
+            finalannot <- data.frame(GENE=j, STATE= "H3K4me3-/H3K27ac+")
+            genechrom <- rbind(genechrom, finalannot)
+            next
+            
+          }
+          
+          
+          #If ratio of H3K4me3+ bins and H3K27ac+ bins are similar, categorize as H3K4me3+/H3K27ac+
+          if (resttable$Freq[resttable$Var1 == "H3K4me3+/H3K27ac-"] / sum(resttable$Freq) > 0.4 &
+              resttable$Freq[resttable$Var1 == "H3K4me3-/H3K27ac+"] / sum(resttable$Freq) > 0.4) {
+            
+            finalannot <- data.frame(GENE=j, STATE= "H3K4me3+/H3K27ac+")
+            genechrom <- rbind(genechrom, finalannot)
+            next
+            
+          }
+          
           
         }
-       
-        
       }
-    }
       
       if ("H3K4me3+/H3K27ac+" %in% unique(activetable$Var1) == F) {
         resttable <- activetable[which(activetable$Var1 != "H3K4me3+/H3K27ac+"),]
@@ -215,18 +183,18 @@ for (j in unique(chromstate$GENE)) {
           
         }
         
-       
+        
       }
       
     }
-  next
+    next
   }
   
-    prevalent_state <- "Ambiguous"
-    prevalent_index <- data.frame(GENE=j, STATE= prevalent_state)
-    genechrom <- rbind(genechrom, prevalent_index)
-    next
-    
+  prevalent_state <- "Ambiguous"
+  prevalent_index <- data.frame(GENE=j, STATE= prevalent_state)
+  genechrom <- rbind(genechrom, prevalent_index)
+  next
+  
   
 }
 
@@ -234,7 +202,7 @@ table(genechrom$STATE)
 
 #Retrieve RNA data
 rna2 <- data.frame(GENE = rna$GENE,
-                           RNAseq_Zscore=rna$HN137MET)
+                   RNAseq_Zscore=rna$HN137MET)
 
 rna_epi <- rna2[which(rna2$GENE %in% genechrom$GENE),]
 
@@ -276,4 +244,4 @@ ggplot2::ggplot(data = rna_epi, aes(x=STATE, y=RNAseq_Zscore, fill = str_wrap(ST
   stat_compare_means(comparisons = my_comparisons, 
                      method = "wilcox.test", size = 8, label.y = c(2.2,2.7,3.2,3.7), label = "p.signif")
 
-save.image(file = "25052022_RNAseq_Zscore_chromatin_state_static_correlation.RData")
+save.image(file = "22062022_RNAseq_Zscore_chromatin_state_static_correlation.RData")
