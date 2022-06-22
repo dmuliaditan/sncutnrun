@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-#3.1.3. This section describes the script used to subset binned data to include only promoter bins and to annotate the bins with the nearest genes
-#Version 16/06/2022
+#3.7.2. This section describes the script used to subset binned data to include only promoter bins and to annotate the bins with the nearest genes in the HN137Pri > HN137Met transition
+#Version 22/06/2022
 #Daniel Muliaditan
 
 #Required input:
