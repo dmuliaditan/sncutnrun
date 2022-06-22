@@ -1,4 +1,4 @@
-#3.7.1. This section describes the script used to further process ChromHMM data in R
+#3.7.1. This section describes the script used to further process ChromHMM data in R, now looking at the transition between HN137Pri and HN137Met
 #Version 22/06/2022
 #Daniel Muliaditan
 
