@@ -1,5 +1,5 @@
-#3.1.2. This section describes the script used to further process ChromHMM data in R
-#Version 16/06/2022
+#3.7.1. This section describes the script used to further process ChromHMM data in R
+#Version 22/06/2022
 #Daniel Muliaditan
 
 #Required input:
