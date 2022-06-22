@@ -1,9 +1,9 @@
-#3.7 HN137Pri > HN137Met chromatin state alluvial plot
+#3.7.3 HN137Pri > HN137Met chromatin state alluvial plot
 
 #After correlating RNAseq Z-score, CNV, and chromatin-state statically in HN137Met, we look at the transition between HN137Pri and HN137Met
 #First, we look at the chromatin state changes using an alluvial plot
 
-#Version: 10/06/2022
+#Version: 22/06/2022
 #Author: Daniel Muliaditan
 
 #Load existing dataset and required packages
@@ -14,7 +14,6 @@ library(dplyr)
 library(tidyr)
 library(ggalluvial)
 library(rGREAT)
-
 
 #Plot alluvial plot
 #With the results from the table, make an excel sheet with the transitions
