@@ -1,6 +1,6 @@
 #3.6 Static Chromatin State-CNV-RNAseq-Zscore correlation in the HN137Met cell line
 
-#Version: 10/06/2022
+#Version: 22/06/2022
 #Author: Daniel Muliaditan
 
 #After correlating gene-expression/CNV and gene-expression/chromatin state separately, 
@@ -8,7 +8,7 @@
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
-load(file = "25052022_RNAseq_Zscore_chromatin_state_static_correlation.RData")
+load(file = "22062022_RNAseq_Zscore_chromatin_state_static_correlation.RData")
 
 library(ggplot2)
 
@@ -32,7 +32,7 @@ rna_epi_cnv$gene_CN <- as.numeric(rna_epi_cnv$gene_CN)
 
 #Recategorize genes with higher CN as 4+ CN
 rna_epi_cnv$gene_CN <- ifelse(test = rna_epi_cnv$gene_CN >= 4, 
-                                       yes = "4+", no = rna_epi_cnv$gene_CN)
+                              yes = "4+", no = rna_epi_cnv$gene_CN)
 
 #Plot the figure
 ggplot2::ggplot(data = rna_epi_cnv) +
@@ -48,4 +48,4 @@ ggplot2::ggplot(data = rna_epi_cnv) +
         axis.text.x = element_text(size = 18),
         axis.title = element_text(size = 28))
 
-save.image(file = "01062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
+save.image(file = "22062022_RNAseq_Zscore_chromatin_state_CNV_static_correlation.RData")
