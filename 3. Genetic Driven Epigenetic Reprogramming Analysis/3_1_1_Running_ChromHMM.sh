@@ -13,7 +13,7 @@
 #3.9. Looking at enrichment of chromatin state in regions affected by CN change during the HN137Pri > HN137Met transition
 
 #3.1.1. This section describes the script used to run ChromHMM to annotate genomic regions with chromatin state.
-#Version 16/06/2022
+#Version 22/06/2022
 #Daniel Muliaditan
 
 #Required input:
