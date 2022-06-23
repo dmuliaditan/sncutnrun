@@ -1,7 +1,17 @@
-#In this section, we perform differential peak calling and differential motif analysis
+#4.1. Module Score analysis and HN120preMET / HN137prePCR analysis
 
-#Version: 13/06/2022
+#Version: 23/06/2022
 #Author: Daniel Muliaditan
+
+#In this section, we will discover epigenetic heterogeneity, and find HN120preMET and HN137prePCR cells
+
+#Load existing dataset and required packages
+setwd("D:/snCUT_RUN/scripts")
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#000000")
+
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#AA4499", "#332288",  
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 
 #Load necessary packages and set seed
 library(ggplot2)
@@ -21,19 +31,20 @@ library(JASPAR2020)
 library(TFBSTools)
 library(SeuratWrappers)
 library(Matrix)
-library(monocle3)
 library(rGREAT)
+library(ggtern)
 set.seed(1234)
 
 #Set the working directory and load the dataset
-setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
+setwd("D:/snCUT_RUN/signac/DM_052022")
 load(paste0(histone,"_tfmotifs.RData")) 
 
 #HN120preMET analysis
 #Calculate cell line specific modules
 head(HN@meta.data)
-HN@meta.data <- HN@meta.data[,-c(21:27)] #Optional, remove previous module scores
+#HN@meta.data <- HN@meta.data[,-c(21:27)] #Optional, remove previous module scores
 
+#Rename the identities correctly
 Idents(HN) <- HN@meta.data$Experiment
 Idents(HN) <- factor(Idents(HN), 
                      levels = c("HN120PRI", "HN120MET", "HN120PCR", "HN137PRI", "HN137MET", "HN137PCR"))
@@ -85,7 +96,7 @@ for (k in names(modules)) {
                             start=as.numeric(sub("-.*", "", startend_peaks)),
                             end= as.numeric(sub(".*-", "", modules[[k]])))
   write.table(x = great_peaks, 
-              file = paste0("E:/snCUT_RUN/data/peaks/",k,"_marker_peaks_",histone,".bed"),
+              file = paste0("D:/snCUT_RUN/data/peaks/",k,"_marker_peaks_",histone,".bed"),
               col.names = F, 
               row.names = F, 
               sep = "\t", 
@@ -121,7 +132,6 @@ module.scores <- HN@meta.data[,21:26]
 module.scores[is.na(module.scores)] <- 0
 
 #Plot ternary plots
-library(ggtern)
 HN120_metadata <- HN@meta.data[which(grepl(pattern = "HN120", HN@meta.data$Experiment) == T),]
 HN120_metadata2 <- data.frame(Experiment=HN120_metadata$Experiment,
                               HN120PRI=HN120_metadata$HN120PRI,
@@ -131,21 +141,6 @@ rownames(HN120_metadata2) <- rownames(HN120_metadata)
 HN120_metadata2 <- na.omit(HN120_metadata2)
 range(HN120_metadata2$HN120PRI)
 min(HN120_metadata2$HN120PRI)
-
-head(HN120_metadata2)
-ggplot(data = HN120_metadata2, aes(x=reorder(factor(rownames(HN120_metadata2)),HN120PCR),y=HN120PCR, colour=Experiment))+
-  geom_point(size=3) +
-  scale_color_manual(values = c("#F8766D", "#B79F00", "#00BA38")) +
-  theme_classic() +
-  xlab("HN120 Cells")  +
-  ylab("HN120PCR Module Score") +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.title = element_text(size = 30),
-        axis.text.y = element_text(size = 24),
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 24))
 
 #Normalize module scores to take into account module scores below zero
 pos_normalised_HN120 <- NULL
@@ -247,150 +242,24 @@ DimPlot(object = HN, group.by="subclust", label = F, pt.size = 3,
         title = element_text(size = 30),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
-#Redo marker analysis with HN120preMET subpopulation
-HN.markers <- FindAllMarkers(object = HN, 
-                             assay = "peak", 
-                             only.pos = TRUE, 
-                             min.pct = 0.2, 
-                             test.use = 'LR',
-                             latent.vars = 'nCount_peak')
-top50 <- HN.markers %>% group_by(cluster) %>% top_n(50, avg_log2FC)
-closest_genes <- ClosestFeature(HN, regions = top50$gene)
-top50$gene2<-closest_genes$gene_name
-DoHeatmap(object = HN, 
-          assay = "peak", 
-          features = top50$gene[1:100], 
-          label = F, 
-          slot="counts", 
-          size = 5, 
-          angle = 90,
-          cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120PRI" |
-                                                 HN@meta.data$subclust == "HN120MET" |
-                                                 HN@meta.data$subclust == "HN120PCR" |
-                                                 HN@meta.data$subclust == "HN120preMET")]) +
-  ggplot2::theme(axis.text = element_blank(),
-                 legend.position = "none"
-  ) 
-
-DoHeatmap(object = HN, 
-          assay = "peak", 
-          features = top50$gene[1:100], 
-          label = F, 
-          slot="counts", 
-          size = 5, 
-          angle = 90,
-          cells = rownames(HN@meta.data)[which(HN@meta.data$subclust == "HN120PRI" |
-                                                 HN@meta.data$subclust == "HN120preMET")]) +
-  ggplot2::theme(axis.text = element_blank(),
-                 legend.position = "none"
-  ) 
-
-top50 %>% print(n = 350)  
-HN120PRI_gene<-top50$gene[1:50]  
-HN120MET_gene<-top50$gene[51:100]  
-HN120PCR_gene<-top50$gene[101:150]
-HN120preMET_gene<-top50$gene[151:200]
-HN137PRI_gene<-top50$gene[201:250]  
-HN137MET_gene<-top50$gene[251:300]  
-HN137PCR_gene<-top50$gene[301:350]  
-modules <- list(HN120PRI_gene, HN120MET_gene, HN120PCR_gene, HN120preMET_gene,
-                HN137PRI_gene, HN137MET_gene, HN137PCR_gene)
-names(modules) <- c("HN120PRI", "HN120MET", "HN120PCR", "HN120preMET",
-                    "HN137PRI", "HN137MET", "HN137PCR")
-
-#Re-add chromatin modules
-head(HN@meta.data)
-HN@meta.data <- HN@meta.data[,-c(21:26)]
-HN <- AddChromatinModule(object = HN, modules, BSgenome.Hsapiens.UCSC.hg38, assay = 'peak', verbose = TRUE)
-
-#Plot new module scores: HN120
+#Plot HN120Met module score with HN120preMET cells
 VlnPlot(object=HN, features='HN120MET',
-        idents = c("HN120PRI", "HN120MET", "HN120preMET","HN120PCR")) +
+        idents = c("HN120PRI", "HN120MET", "HN120preMET")) +
   xlab("")  +
   coord_cartesian(ylim = c(-5, 12), expand = T) +
   ggtitle("HN120MET Module Score") +
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_manual(values = cbPalette[c(1:3,7)]) +
+  scale_fill_manual(values = cbPalette[c(1:2,7)]) +
   theme(title = element_text(size = 24),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 24),
         axis.text.y = element_text(size = 18),
         axis.text.x = element_blank(),
         legend.text = element_text(size = 18),
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5))# +
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
-#Check that UMR and FRiP are not confounding factors in preMET analysis
-### HN120preMET UMR count
-my_comparisons_HN120 <- list( c("HN120PRI", "HN120MET"), c("HN120PRI", "HN120preMET"), c("HN120MET", "HN120preMET") )
-ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120preMET")), 
-       mapping = aes(x = subclust, y = UMRs, fill = subclust))+
-  geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_brewer(palette = "Accent") +
-  theme_bw() +
-  ylim(c(0,130000)) +
-  stat_compare_means(comparisons = my_comparisons_HN120, size = 8, label = "p.signif", vjust = 0.1, label.y = c(100000, 110000, 122000)) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size=36),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5  ),
-        axis.line = element_blank())
+save.image(paste0("230622_",histone,"_HN120preMET.RData"))
 
-### HN120preMET FRiP count
-ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120preMET")), 
-       mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
-  geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1,fill = "white") +
-  scale_fill_brewer(palette = "Accent") +
-  theme_bw() +
-  ylim(c(0,100)) +
-  ylab("Percentage of reads in peaks\n") +
-  stat_compare_means(comparisons = my_comparisons_HN120, size = 8, label = "p.signif", label.y = c(73,80,87)) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank())
-
-#Linear regression to show that FRIP are not correlated with module scores
-ggplot(subset(HN@meta.data, subclust %in% c("HN120preMET")), 
-       mapping = aes(x = Pct_reads_in_peaks, y = HN120MET))+
-  geom_point() +
-  geom_smooth(method = "lm") +
-  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
-  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
-  theme_bw() +
-  ylab("HN120PRI Module Score") +
-  xlab("HN120preMET - Pct reads in Peaks") +
-  theme(legend.position = "none",
-        axis.title.x = element_text(size = 28),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank()) 
-
-#Linear regression to show that UMRs are not correlated with module scores
-ggplot(subset(HN@meta.data, subclust %in% c("HN120preMET")), 
-       mapping = aes(x = UMRs, y = HN120MET))+
-  geom_point() +
-  geom_smooth(method = "lm") +
-  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
-  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
-  theme_bw() +
-  ylab("HN120PRI Module Score") +
-  xlab("HN120preMET - UMRs") +
-  theme(legend.position = "none",
-        axis.title.x = element_text(size = 28),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank()) 
 
 ##################################### HN137prePCR analysis #########################################
 #Repeat the same thing, but for HN137prePCR
