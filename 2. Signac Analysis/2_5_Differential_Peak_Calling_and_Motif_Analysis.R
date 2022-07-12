@@ -1,6 +1,6 @@
 #In this section, we perform differential peak calling and differential motif analysis
 
-#Version: 13/06/2022
+#Version: 12/07/2022
 #Author: Daniel Muliaditan
 
 #Load necessary packages and set seed
