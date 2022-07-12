@@ -26,7 +26,7 @@ library(rGREAT)
 set.seed(1234)
 
 #Set the working directory and load the dataset
-setwd("/mnt/raid5/cutnrun/userFiles/daniel/DM112021/K27ac")
+setwd("D:/snCUT_RUN/signac/DM_052022")
 load(paste0(histone,"_tfmotifs.RData")) 
 
 #Motif analysis: everything at the same time
@@ -60,13 +60,19 @@ for (o in 1:8) {
   
   #Get top differentially accessible peaks
   top.da.peak <- rownames(da_peaks[da_peaks$p_val < 0.005, ])
+  
+  #Get all peaks of HN137Pri and HN137Met
+  cells <- HN$Experiment == comparisons[[o]][[1]] | HN$Experiment == comparisons[[o]][[2]]  # choose cells for the cluster you want
+  counts <- GetAssayData(HN, assay = 'peak', slot = 'counts')
+  peaks.use <- which(Matrix::rowSums(counts[, cells]) > 0)
+  
   peaks.matched <- MatchRegionStats(
-    meta.feature=meta.feature,
+    meta.feature=meta.feature[names(peaks.use),],
     query.feature=meta.feature[top.da.peak,],
-    n=nrow(meta.feature),
+    n=nrow(meta.feature[names(peaks.use),]),
     verbose = T
   )
-   
+  
   #Test enrichment
   enriched.motifs <- FindMotifs(
     object = HN,
@@ -76,7 +82,7 @@ for (o in 1:8) {
   )
   
   write.table(x = enriched.motifs[,c(1,6:8)], 
-              file = paste0(histone,"_enriched_motifs",comparisons[[o]][[1]], "_vs_",comparisons[[o]][[2]],".txt"),
+              file = paste0(histone,"_enriched_motifs_",comparisons[[o]][[1]], "_vs_",comparisons[[o]][[2]],".txt"),
               sep = "\t", 
               quote = F, 
               row.names = F, 
@@ -88,19 +94,19 @@ for (o in 1:8) {
                             start=as.numeric(sub("-.*", "", startend_peaks)),
                             end= as.numeric(sub(".*-", "", top.da.peak)))
   write.table(x = great_peaks, 
-              file = paste0(histone,"_peaks",comparisons[[o]][[1]], "_vs_",comparisons[[o]][[2]],".bed"),
+              file = paste0(histone,"_peaks_",comparisons[[o]][[1]], "_vs_",comparisons[[o]][[2]],".bed"),
               col.names = F, 
               row.names = F, 
               sep = "\t", 
               quote = F)
- 
+  
 }
 
 #Specific comparisons
 da_peaks <- FindMarkers(
   object = HN,
-  ident.1 = 'HN137prePCR',
-  ident.2 = 'HN137PCR',
+  ident.1 = 'HN137MET',
+  ident.2 = 'HN137PRI',
   only.pos = TRUE,
   test.use = 'LR',
   latent.vars = 'nCount_peak',
@@ -110,10 +116,16 @@ da_peaks <- FindMarkers(
 
 #Get top differentially accessible peaks
 top.da.peak <- rownames(da_peaks[da_peaks$p_val < 0.005, ])
+
+#Get all peaks of HN137Pri and HN137Met
+cells <- HN$Experiment == "HN137PRI" | HN$Experiment == "HN137MET"  # choose cells for the cluster you want
+counts <- GetAssayData(HN, assay = 'peak', slot = 'counts')
+peaks.use <- which(Matrix::rowSums(counts[, cells]) > 0)
+
 peaks.matched <- MatchRegionStats(
-  meta.feature=meta.feature,
+  meta.feature=meta.feature[names(peaks.use),],
   query.feature=meta.feature[top.da.peak,],
-  n=nrow(meta.feature),
+  n=nrow(meta.feature[names(peaks.use),]),
   verbose = T
 )
 
@@ -173,20 +185,29 @@ for (k in which(grepl(pattern,setdiff(bedlist[[1]],bedlist[[2]])) == F)){
 }
 
 #Find specific motif
-motif_ind <- which(enriched.motifs$motif.name == "SNAI1")
-FeaturePlot(
-  object = HN,
-  features = enriched.motifs$motif[motif_ind],
-  min.cutoff = 'q10',
-  max.cutoff = 'q90',
-  pt.size = 3
-) +
-  ggtitle(enriched.motifs$motif.name[motif_ind]) +
-  xlab("UMAP 1") +
-  ylab("UMAP 2") +
-  theme(axis.title.x = element_text(size = 24),
-        axis.title.y = element_text(size = 24),
-        axis.text = element_text(size = 18),
-        legend.text = element_text(size = 18),
-        title = element_text(size=30),
-        panel.border = element_rect(colour = "black", fill=NA, size=0.5))
+
+for (t in c("KLF5", "TEAD4", "FOSL2")) {
+  print(t)
+  TF <- t
+  motif_ind <- which(enriched.motifs$motif.name == TF)
+  motifplot <- FeaturePlot(
+    object = HN,
+    features = enriched.motifs$motif[motif_ind],
+    min.cutoff = 'q10',
+    max.cutoff = 'q90',
+    pt.size = 1,
+    cells = rownames(HN@meta.data)[which(grepl(pattern = "HN137", x = HN$Experiment) == T)]
+  ) +
+    ggtitle(enriched.motifs$motif.name[motif_ind]) +
+    xlab("UMAP 1") +
+    ylab("UMAP 2") +
+    theme(axis.title.x = element_text(size = 12),
+          axis.title.y = element_text(size = 12),
+          axis.text = element_text(size = 9),
+          legend.text = element_text(size = 9),
+          title = element_text(size=13),
+          panel.border = element_rect(colour = "black", fill=NA, size=1.5))
+  ggsave(filename = paste0("D:/snCUT_RUN/figures/figures/supplementary_figs/", TF,"_HN137_motifs.pdf"),
+         plot = motifplot, width = 1024, height = 1024, units = "px", dpi = 300)
+}
+
