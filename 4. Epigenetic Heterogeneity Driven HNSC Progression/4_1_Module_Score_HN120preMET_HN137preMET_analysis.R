@@ -205,9 +205,9 @@ ggtern(data = pos_normalised_HN120, aes(HN120MET_postnorm,HN120PRI_postnorm, HN1
 #Subset HN120Pri cells with higher HN120Met scores and relabel them as HN120preMET
 pos_normalised_HN120$subclust <- 0
 pos_normalised_HN120$subclust <- ifelse(test = pos_normalised_HN120$HN120PRI > 0.4 &
-                                    pos_normalised_HN120$HN120MET > 0.4 &
-                                    pos_normalised_HN120$HN120PCR < 0.2 &
-                                    pos_normalised_HN120$Experiment == "HN120PRI", yes = "HN120preMET", no = pos_normalised$Experiment)
+                                          pos_normalised_HN120$HN120MET > 0.4 &
+                                          pos_normalised_HN120$HN120PCR < 0.2 &
+                                          pos_normalised_HN120$Experiment == "HN120PRI", yes = "HN120preMET", no = pos_normalised$Experiment)
 table(pos_normalised_HN120$Experiment)
 table(pos_normalised_HN120$subclust)
 HN120preMET_index <- rownames(pos_normalised)[which(pos_normalised$subclust == "HN120preMET")] #Extract HN120preMET cell barcodes
@@ -259,6 +259,78 @@ VlnPlot(object=HN, features='HN120MET',
         panel.border = element_rect(colour = "black", fill=NA, size=0.5))
 
 save.image(paste0("230622_",histone,"_HN120preMET.RData"))
+
+#Check that UMR and FRiP are not confounding factors in HN137prePCR analysis
+### HN137prePCR UMR count
+my_comparisons_HN120 <- list( c("HN120PRI", "HN120MET"), c("HN120PRI", "HN120preMET"), c("HN120MET", "HN120preMET") )
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120preMET")), 
+       mapping = aes(x = subclust, y = UMRs, fill = subclust))+
+  geom_violin(lwd=1) +
+  geom_boxplot(width=0.3, lwd=1, fill = "white") +
+  scale_fill_manual(values = cbPalette[c(1,2,7)]) +
+  theme_bw() +
+  coord_cartesian(ylim = (c(0,130000)), expand = T) +
+  stat_compare_means(comparisons = my_comparisons_HN120, size = 8, label = "p.signif", vjust = 0.1, label.y = c(100000, 110000, 122000)) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=36),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 30),
+        panel.border = element_rect(colour = "black", fill=NA,size=0.5  ),
+        axis.line = element_blank())
+
+### HN120preMET FRiP count
+ggplot(subset(HN@meta.data, subclust %in% c("HN120PRI", "HN120MET", "HN120preMET")), 
+       mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
+  geom_violin(lwd=1) +
+  geom_boxplot(width=0.3, lwd=1, fill = "white") +
+  scale_fill_manual(values = cbPalette[c(1,2,7)]) +
+  theme_bw() +
+  ylim(c(0,90)) +
+  ylab("Percentage of reads in peaks\n") +
+  stat_compare_means(comparisons = my_comparisons_HN120, size = 8, label = "p.signif") +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=28),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 30),
+        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
+        axis.line = element_blank())
+
+#Linear regression to show that UMRs are not correlated with module scores
+ggplot(subset(HN@meta.data, subclust %in% c("HN120preMET")), 
+       mapping = aes(x = UMRs, y = HN120MET))+
+  geom_point() +
+  geom_smooth(method = "lm") +
+  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
+  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
+  theme_bw() +
+  ylab("HN120MET Module Score") +
+  xlab("HN120preMET - UMRs") +
+  theme(legend.position = "none",
+        axis.title.x = element_text(size = 28),
+        axis.title.y = element_text(size=28),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 30),
+        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
+        axis.line = element_blank()) 
+
+ggplot(subset(HN@meta.data, subclust %in% c("HN120preMET")), 
+       mapping = aes(x = Pct_reads_in_peaks, y = HN120MET))+
+  geom_point() +
+  geom_smooth(method = "lm") +
+  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
+  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
+  theme_bw() +
+  ylab("HN120MET Module Score") +
+  xlab("HN120preMET - Fraction Reads in Peaks") +
+  theme(legend.position = "none",
+        axis.title.x = element_text(size = 28),
+        axis.title.y = element_text(size=28),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 30),
+        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
+        axis.line = element_blank()) 
 
 
 ##################################### HN137prePCR analysis #########################################
@@ -501,90 +573,20 @@ HN <- AddChromatinModule(object = HN, modules, BSgenome.Hsapiens.UCSC.hg38, assa
 #Plot new module scores: HN137
 my_comparisons <- list(c("HN137PRI", "HN137PCR"), c("HN137PCR", "HN137prePCR"), c("HN137PRI", "HN137prePCR"))
 VlnPlot(object=HN, features='HN137PCR',
-        idents = c("HN137PRI", "HN137MET", "HN137PCR","HN137prePCR")) +
+        idents = c("HN137PRI", "HN137PCR","HN137prePCR")) +
   xlab("")  +
   coord_cartesian(ylim = c(-5, 12), expand = T) +
   ggtitle("HN137PCR Module Score") +
   geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_manual(values = cbPalette[c(4:6,8)]) +
+  scale_fill_manual(values = cbPalette[c(4,6,8)]) +
   #stat_compare_means(comparisons = my_comparisons, size = 8, label.y = c(11,13,15), label = "p.signif", na.rm = T) +
   theme(title = element_text(size = 24),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 24),
         axis.text.y = element_text(size = 18),
         axis.text.x = element_blank(),
-        legend.text = element_text(size = 18),
+        legend.text = element_text(size = 28),
         panel.border = element_rect(colour = "black", fill=NA, size=0.5)) 
 
 
-#Check that UMR and FRiP are not confounding factors in HN137prePCR analysis
-### HN137prePCR UMR count
-my_comparisons_HN137 <- list( c("HN137PRI", "HN137PCR"), c("HN137PRI", "HN137prePCR"), c("HN137PCR", "HN137prePCR") )
-ggplot(subset(HN@meta.data, subclust %in% c("HN137PRI", "HN137PCR", "HN137prePCR")), 
-       mapping = aes(x = subclust, y = UMRs, fill = subclust))+
-  geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_manual(values = cbPalette[c(4,6,8)]) +
-  theme_bw() +
-  coord_cartesian(ylim = (c(0,130000)), expand = T) +
-  stat_compare_means(comparisons = my_comparisons_HN137, size = 8, label = "p.signif", vjust = 0.1, label.y = c(100000, 110000, 122000)) +
-  theme(legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size=36),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5  ),
-        axis.line = element_blank())
 
-### HN137prePCR FRiP count
-ggplot(subset(HN@meta.data, subclust %in% c("HN137PRI", "HN137PCR", "HN137prePCR")), 
-       mapping = aes(x = subclust, y = Pct_reads_in_peaks, fill = subclust))+
-  geom_violin(lwd=1) +
-  geom_boxplot(width=0.3, lwd=1, fill = "white") +
-  scale_fill_manual(values = cbPalette[c(4,6,8)]) +
-  theme_bw() +
-  ylim(c(0,90)) +
-  ylab("Percentage of reads in peaks\n") +
-  stat_compare_means(comparisons = my_comparisons_HN137, size = 8, label = "p.signif") +
-  theme(legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank())
-
-#Linear regression to show that UMRs are not correlated with module scores
-ggplot(subset(HN@meta.data, subclust %in% c("HN137prePCR")), 
-       mapping = aes(x = UMRs, y = HN137PCR))+
-  geom_point() +
-  geom_smooth(method = "lm") +
-  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
-  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
-  theme_bw() +
-  ylab("HN137PCR Module Score") +
-  xlab("HN137prePCR - UMRs") +
-  theme(legend.position = "none",
-        axis.title.x = element_text(size = 28),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank()) 
-
-ggplot(subset(HN@meta.data, subclust %in% c("HN137prePCR")), 
-       mapping = aes(x = Pct_reads_in_peaks, y = HN137PCR))+
-  geom_point() +
-  geom_smooth(method = "lm") +
-  stat_regline_equation(label.y = 9, aes(label = ..eq.label..), size = 7) +
-  stat_regline_equation(label.y = 8.5, aes(label = ..rr.label..), size = 7) +
-  theme_bw() +
-  ylab("HN137PCR Module Score") +
-  xlab("HN137prePCR - Fraction Reads in Peaks") +
-  theme(legend.position = "none",
-        axis.title.x = element_text(size = 28),
-        axis.title.y = element_text(size=28),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 30),
-        panel.border = element_rect(colour = "black", fill=NA,size=0.5),
-        axis.line = element_blank()) 
