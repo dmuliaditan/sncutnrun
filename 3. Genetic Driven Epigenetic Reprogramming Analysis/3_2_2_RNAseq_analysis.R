@@ -146,7 +146,7 @@ Z$HN120PCR <- rowMeans(Z[,7:9])
 Z$HN137PRI <- rowMeans(Z[,10:12])
 Z$HN137MET <- rowMeans(Z[,13:15])
 Z$HN137PCR <- rowMeans(Z[,16:18])
-write.table(x = Z[,19:24], file = "/home/daniel/daniel_new/DM_SNCUTRUN_RNAseq_HN120_HN137_Zscore_allgenes.txt", quote = F, sep = "\t",
+write.table(x = Z[,19:24], file = "snCUTRUN_RNAseq_HN120_HN137_Zscore_allgenes.txt", quote = F, sep = "\t",
             row.names = T, col.names = T)
             
 ####### Clustering and similarity analysis ########
