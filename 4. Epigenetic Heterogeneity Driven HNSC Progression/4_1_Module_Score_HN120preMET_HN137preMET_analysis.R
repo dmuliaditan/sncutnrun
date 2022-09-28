@@ -3,7 +3,7 @@
 #Version: 23/06/2022
 #Author: Daniel Muliaditan
 
-#In this section, we will discover epigenetic heterogeneity, and find HN120preMET and HN137prePCR cells
+#In this section, we will analyze epigenetic heterogeneity, and find HN120preMET and HN137prePCR cells
 
 #Load existing dataset and required packages
 setwd("D:/snCUT_RUN/scripts")
