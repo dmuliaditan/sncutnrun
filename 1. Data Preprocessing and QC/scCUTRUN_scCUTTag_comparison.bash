@@ -58,6 +58,10 @@ msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip K27me3_GBM_primary_S1_L001_R1_001.fastq 
 gzip K27me3_GBM_primary_S1_L001_R2_001.fastq
 
+msg="Call peaks with MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t K27me3_GBM_primary.bam -f AUTO -n K27me3_GBM_primary \
+--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits -B
+
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/sccuttag/K27me3_GBM_recurrent_rep1/
 
 msg="Map with bowtie2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -93,6 +97,10 @@ msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip K27me3_GBM_recurrent_rep1_S1_L001_R1_001.fastq 
 gzip K27me3_GBM_recurrent_rep1_S1_L001_R2_001.fastq
 
+msg="Call peaks with MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t K27me3_GBM_recurrent_rep1.bam -f AUTO -n K27me3_GBM_recurrent_rep1 \
+--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits -B
+
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/sccuttag/K27me3_GBM_recurrent_rep2/
 
 msg="Map with bowtie2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -116,7 +124,7 @@ gatk MarkDuplicates \
 --ASSUME_SORTED true --REMOVE_DUPLICATES true
 
 samtools sort K27me3_GBM_recurrent_rep2_rmdup.bam -@ "$THREADS" > K27me3_GBM_recurrent_rep2.bam
-samtools index K27me3_GBM_recurrent_rep2bam -@ "$THREADS"
+samtools index K27me3_GBM_recurrent_rep2.bam -@ "$THREADS"
   
 msg="Remove old and unsorted bam and sam, and preprocessing beds"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 rm K27me3_GBM_recurrent_rep2_unsort.bam
@@ -127,3 +135,7 @@ rm K27me3_GBM_recurrent_rep2_rmdup.bam
 msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip K27me3_GBM_recurrent_rep2_S1_L001_R1_001.fastq 
 gzip K27me3_GBM_recurrent_rep2_S1_L001_R2_001.fastq
+
+msg="Call peaks with MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t K27me3_GBM_recurrent_rep2.bam -f AUTO -n K27me3_GBM_recurrent_rep2 \
+--nomodel -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits -B
