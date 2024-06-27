@@ -23,9 +23,13 @@ module load gatk
 
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/cotech/mESC_H3K4me3_H3K27me3_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
-do 
+do
+
+gzip -d "$i"'_1.fastq.gz'
+gzip -d "$i"'_2.fastq.gz'
+
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 msg="Map with bowtie2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 (bowtie2 -p "$THREADS" --end-to-end --very-sensitive --no-mixed --no-discordant \
@@ -59,6 +63,8 @@ rm "$i"'_rmdup.bam'
 msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
+
+done
 
 #Aggregate .bam filenames 
 msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -76,11 +82,9 @@ macs2 callpeak -t 'mESC_H3K4me3_H3K27me3_merged_sorted.bam' -f BAMPE \
 
 msg="Finished"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 
-done
-
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/cotech/AGM_H3K27ac_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
 do 
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -116,6 +120,8 @@ rm "$i"'_rmdup.bam'
 msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
+
+done
 
 #Aggregate .bam filenames 
 msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -131,11 +137,9 @@ msg="Call peaks on each merged bam using MACS2"; echo "-- $msg $longLine"; >&2 e
 macs2 callpeak -t 'AGM_H3K27ac_merged_sorted.bam' -f BAMPE \
 -n AGM_H3K27ac --seed 1234 -g mm -f AUTO --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
 
-done
-
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/cotech/YS_H3K27ac_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
 do 
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -172,6 +176,8 @@ msg="Gzip fastq"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
 
+done
+
 #Aggregate .bam filenames 
 msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 ls -d *.bam > 'bamslist.txt'
@@ -185,5 +191,3 @@ samtools index 'YS_H3K27ac_merged_sorted.bam'
 msg="Call peaks on each merged bam using MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 macs2 callpeak -t 'YS_H3K27ac_merged_sorted.bam' -f BAMPE \
 -n YS_H3K27ac --seed 1234 -g mm -f AUTO --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
-
-done
