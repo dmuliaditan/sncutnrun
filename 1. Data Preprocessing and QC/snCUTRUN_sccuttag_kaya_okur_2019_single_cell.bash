@@ -23,7 +23,7 @@ module load gatk
 
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/sccuttag_kaya_okur_2019/K562_H3K4me2_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
 do 
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -61,10 +61,26 @@ gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
 
 done
+
+#Aggregate .bam filenames 
+msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+ls -d *.bam > 'bamslist.txt'
+
+msg="Merge all .bams to form pseudobulk, sort and index"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+samtools merge -f -b 'bamslist.txt' 'K562_H3K4me2_merged_unsort.bam' --threads "$THREADS"
+samtools sort 'K562_H3K4me2_merged_unsort.bam' > 'K562_H3K4me2_merged_sorted.bam'
+samtools index 'K562_H3K4me2_merged_sorted.bam'
+
+#Call peaks on each merged bam using MACS2
+msg="Call peaks on each merged bam using MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t 'K562_H3K4me2_merged_sorted.bam' -f BAMPE \
+-n K562_H3K4me2 --seed 1234 -g hs -f AUTO --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
+
+msg="Finished"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/sccuttag_kaya_okur_2019/K562_H3K27me3_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
 do 
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -102,10 +118,26 @@ gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
 
 done
+
+#Aggregate .bam filenames 
+msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+ls -d *.bam > 'bamslist.txt'
+
+msg="Merge all .bams to form pseudobulk, sort and index"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+samtools merge -f -b 'bamslist.txt' 'K562_H3K27me3_merged_unsort.bam' --threads "$THREADS"
+samtools sort 'K562_H3K27me3_merged_unsort.bam' > 'K562_H3K27me3_merged_sorted.bam'
+samtools index 'K562_H3K27me3_merged_sorted.bam'
+
+#Call peaks on each merged bam using MACS2
+msg="Call peaks on each merged bam using MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t 'K562_H3K27me3_merged_sorted.bam' -f BAMPE \
+-n K562_H3K27me3 --seed 1234 -g hs -f AUTO --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
+
+msg="Finished"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 
 cd /scratch/users/astar/gis/muliaditand/sncutrun/public_data/sccuttag_kaya_okur_2019/H1_K562_H3K27me3_pool2_single_cells/
 
-for i in `cat '/filenames.txt'`
+for i in `cat 'filenames.txt'`
 
 do 
 msg="Cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
@@ -143,4 +175,18 @@ gzip "$i"'_1.fastq'
 gzip "$i"'_2.fastq'
 
 done
+
+#Aggregate .bam filenames 
+msg="Aggregate individual single-cell .bam names to cell line-antibody .bam list"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+ls -d *.bam > 'bamslist.txt'
+
+msg="Merge all .bams to form pseudobulk, sort and index"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+samtools merge -f -b 'bamslist.txt' 'H1_K562_H3K27me3_pool2_merged_unsort.bam' --threads "$THREADS"
+samtools sort 'H1_K562_H3K27me3_pool2_merged_unsort.bam' > 'H1_K562_H3K27me3_pool2_merged_sorted.bam'
+samtools index 'H1_K562_H3K27me3_pool2_merged_sorted.bam'
+
+#Call peaks on each merged bam using MACS2
+msg="Call peaks on each merged bam using MACS2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
+macs2 callpeak -t 'H1_K562_H3K27me3_merged_sorted.bam' -f BAMPE \
+-n H1_K562_H3K27me3_pool2 --seed 1234 -g hs -f AUTO --nomodel -B -p 5e-2 --min-length 500 --max-gap 400 --SPMR --call-summits
 
