@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#SBATCH -J snCUTRUN_sccuttag_kaya_okur_2019_bulk
+#SBATCH -J snCUTRUN_sccuttag_kaya_okur_2019_single_cell
 #SBATCH -t 24:00:00
 #SBATCH -N 1
 #SBATCH -p normal
