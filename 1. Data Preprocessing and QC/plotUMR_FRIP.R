@@ -1,7 +1,7 @@
 library(ggplot2)
 setwd("D:/snCUT_RUN/metadata")
 
-data  <- read.csv("onlySingleCellUMR_FRiP_data.csv", header = T)
+data  <- read.csv("20200114 UMRs FRiP rank.csv", header = T)
 
 a <- ggplot(data = data, mapping = aes(x = factor(antibody), y = UMR, fill = factor(antibody))) +
   geom_violin(lwd=1) +
