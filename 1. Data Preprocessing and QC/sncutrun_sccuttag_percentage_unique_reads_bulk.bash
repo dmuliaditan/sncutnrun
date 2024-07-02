@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #SBATCH -J snCUTRUN_sccuttag_calculate_mapping_rate_bulk
-#SBATCH -t 72:00:00
+#SBATCH -t 12:00:00
 #SBATCH -N 1
 #SBATCH -p normal
 #SBATCH --ntasks-per-node 1
