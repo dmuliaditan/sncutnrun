@@ -89,5 +89,15 @@ samtools view -c -f 1 -F 12 "$i"'.bam' > "$i"'.txt'
 
 paste "$i"'_barcode.txt' "$i"'.txt' "$i"'_fastq_read1_count.txt' "$i"'_fastq_read2_count.txt' > "$i"'_barcodes_precount.txt'
 cat "$i"'_barcodes_precount.txt' >> 'snCUTRUN_H3K27ac_mapping_metrics.txt'
- 
+
+rm "$i"'.txt'
+rm "$i"'.bed'
+rm "$i"'_preproc.bed'
+rm "$i"'_postsort.bed'
+rm "$i"'_fastq_read1_count.txt'
+rm "$i"'_fastq_read2_count.txt'
+rm "$i"'_barcodes_precount.txt'
+rm "$i"'_sorted_metrics.txt'
+rm "$i"'_barcode.txt'
+
 done
