@@ -36,14 +36,14 @@ gzip -d "$i"'_L001_R2_001.fastq.gz'
 
 msg="Downsample cell: $i"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 /scratch/users/astar/gis/muliaditand/programmes/seqtk/seqtk/seqtk sample -s100 "$i"'_L001_R1_001.fastq' 0.75 >  "$i"'_L001_R1_001_downsampled.fastq' 
-/scratch/users/astar/gis/muliaditand/programmes/seqtk/seqtk/seqtk sample -s100 "$i"'_L001_R2_001.fastq' 0.75 >  "$i"'_L001_R1_001_downsampled.fastq' 
+/scratch/users/astar/gis/muliaditand/programmes/seqtk/seqtk/seqtk sample -s100 "$i"'_L001_R2_001.fastq' 0.75 >  "$i"'_L001_R2_001_downsampled.fastq' 
 
 msg="Map with bowtie2"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 (bowtie2 -p "$THREADS" --end-to-end --very-sensitive --no-mixed --no-discordant \
 --met-file "$i"'_downsampled.txt' \
 -q --phred33 -I 10 -X 700 -x /scratch/users/astar/gis/muliaditand/programmes/bowtie2/GRCh38_noalt_decoy_as/GRCh38_noalt_decoy_as \
 -1 "$i"'_L001_R1_001_downsampled.fastq' \
--2 "$i"'_L001_R1_001_downsampled.fastq' -S "$i"'_downsampled.sam') 2>>alignment_metrics_downsampled.txt 
+-2 "$i"'_L001_R2_001_downsampled.fastq' -S "$i"'_downsampled.sam') 2>>alignment_metrics_downsampled.txt 
 
 msg="Convert sam to bam"; echo "-- $msg $longLine"; >&2 echo "-- $msg $longLine"
 samtools view -Sb  "$i"'_downsampled.sam' -@ "$THREADS" >  "$i"'_downsampled_unsort.bam'
