@@ -26,7 +26,7 @@ touch 'snCUTRUN_90_cells_reads_per_promoter.txt'
 
 # Define the path to your BED file
 
-bed_file_path='promoters_hg38.bed'
+bed_file_path='promoter_regions_hg38_sorted.bed'
 
 # Loop over each line in the BED file
 while IFS= read -r line; do
